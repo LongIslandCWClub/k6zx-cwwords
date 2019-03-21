@@ -5,6 +5,7 @@
 import argparse
 import inspect
 import os
+import random
 import re
 import sys
 
@@ -30,17 +31,26 @@ def parseArguments():
     parser = argparse.ArgumentParser(description='CW Words audio file generator.',
                                       epilog=p)
 
+    parser.add_argument('-c', '--cw-file', action='store', dest='cwFileName',
+                        type=str, default="cw.pcm", help='CW PCM output file')
     parser.add_argument('-f', '--freq', action='store', dest='freq', type=int,
                         default=600, help='CW tone frequency (Hz)')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
                         type=int, default=40,
                         help='Number of Koch Method characters to use')
-    parser.add_argument('-w', '--words-min', action='store', dest='wpm', type=int,
-                        default=20,
-                        help='Character speed (words per minute) to generate')
     parser.add_argument('-n', '--farns-min', action='store', dest='farns', type=int,
                         default=5,
                         help='Farnsworth character speed to generate')
+    parser.add_argument('-p', '--play', action='store_true', dest='play',
+                        help='Play cw word file')
+    parser.add_argument('-r', '--random', action='store_true', dest='random',
+                        help='Randomize words in the output')
+    parser.add_argument('-t', '--tot-words', action='store', dest='totalWords',
+                        type=int, default=10000,
+                        help='Total number of words to output')
+    parser.add_argument('-w', '--words-min', action='store', dest='wpm', type=int,
+                        default=20,
+                        help='Character speed (words per minute) to generate')
 
     args = parser.parse_args()
 
@@ -83,6 +93,18 @@ def getWordList(charList):
 
     return wordLst
 
+
+def generateCWSoundFile(progArgs, wordLst):
+    words = ""
+
+    # convert word list into long string of words suitable to
+    # supply as stdin for 'cwpcm' program
+    for word in wordLst:
+        words += word + " "
+
+    cmd = f"cat {words} | cwpcm"
+    
+    
     
 
 def main():
@@ -92,13 +114,23 @@ def main():
     progArgs['numKochChars'] = args.numKochChars
     progArgs['farns'] = args.farns
     progArgs['wpm'] = args.wpm
+    progArgs['freq'] = args.freq
+    progArgs['totalWords'] = args.totalWords
+    progArgs['random'] = args.random
+    progArgs['cwFileName'] = args.cwFileName
+    progArgs['play'] = args.play
     print(f"args: {progArgs}")
 
     charList = getKochChars(progArgs['numKochChars'])
     print(f"chars: {charList}")
 
     wordLst = getWordList(charList)
-    print(f"words: {wordLst}")
+    random.shuffle(wordLst)
+    trunWordLst = wordLst[:progArgs['totalWords']]
+    print(f"words: {trunWordLst}")
+    print(f"num words: {len(trunWordLst)}")
+
+    generateCWSoundFile(progArgs, trunWordLst)
 
     sys.exit(0)
 
