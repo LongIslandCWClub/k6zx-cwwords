@@ -1,0 +1,31 @@
+#!/bin/sh
+
+
+# The number of Koch characters to use
+NUM_KOCH_CHARS=7
+
+# Character speed in words per minute
+WPM=20
+
+# Farnsworth effective words per minute
+FARNSWORTH_WPM=5
+
+# CW tone frequency
+FREQUENCY=600
+
+# Total number of words
+TOTAL_WORDS=10
+
+# Minimum word length
+MIN_WORD_LEN=0
+
+# Maximum word length
+MAX_WORD_LEN=256
+
+./cwwords.py -k $NUM_KOCH_CHARS \
+             -w $WPM \
+             -n $FARNSWORTH_WPM \
+             -f $FREQUENCY \
+             -t $TOTAL_WORDS \
+             -r \
+             -p

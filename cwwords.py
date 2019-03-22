@@ -27,9 +27,10 @@ EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
 
 
 def parseArguments():
-    p = ("Generate mp3 file of Morse Code for code practice. The file contains\n"
-         "common English words randomly. The words consist of characters from the "
-         "Koch Method of learning Morse Code, the number of Koch letters can be "
+    p = ("Generate CW sound file with English words for code practice. The program "
+         "either plays the CW sound file or saves the CW words in an mp3 file. "
+         "The words consist of characters from the Koch Method of learning Morse "
+         "Code, the number of Koch letters can be "
          "specified and only words with this set of letters are generated. The "
          "Farnsworth Method is also available and the spacing between charaters "
          "and words may be specified." 
@@ -38,8 +39,9 @@ def parseArguments():
     parser = argparse.ArgumentParser(description='CW Words audio file generator.',
                                       epilog=p)
 
-    parser.add_argument('-c', '--cw-file', action='store', dest='cwFileName',
-                        type=str, default="cw.pcm", help='CW PCM output file')
+    parser.add_argument('-o', '--sound-file', action='store', dest='mp3Filename',
+                        type=str, default=EBOOK2CW_OUTPUT_FILE,
+                        help='CW mp3 sound output file')
     parser.add_argument('-f', '--freq', action='store', dest='freq', type=int,
                         default=600, help='CW tone frequency (Hz)')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
@@ -109,11 +111,11 @@ def getWordList(charList):
 
 def applyMinMax(progArgs, lst):
     wordLst = []
-    print(f"min: {progArgs['minWordLen']}")
-    print(f"max: {progArgs['maxWordLen']}")
+    # print(f"min: {progArgs['minWordLen']}")
+    # print(f"max: {progArgs['maxWordLen']}")
 
     for word in lst:
-        print(f"word: {word} -- len: {len(word)}")
+        # print(f"word: {word} -- len: {len(word)}")
         if len(word) < progArgs['minWordLen']:
             pass
         elif len(word) > progArgs['maxWordLen']:
@@ -138,13 +140,26 @@ def generateCWSoundFile(progArgs, wordLst):
             absFile = os.path.join("/tmp", file)
             os.remove(absFile)
             print(f"remove stale mp3 file: {absFile}")
-    
-    cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
-           f"-f {progArgs['freq']} -o {EBOOK2CW_OUTPUT_FILE} {EBOOK2CW_INPUT_FILE}")
 
-    proc = subprocess.run(cmd, shell=True, capture_output=False)
+    cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
+           f"-f {progArgs['freq']} -o {progArgs['mp3Filename']} {EBOOK2CW_INPUT_FILE}")
+
+    # proc = subprocess.run(cmd, shell=True, capture_output=True)
+    proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
     if proc.returncode:
         print(f"ebook2cw return: {proc.returncode}")
+    for line in proc.stdout.split('\n'):
+        # if line.find('ebook2cw') > -1:
+        #     print(line)
+        if re.search("^ebook2cw", line):
+            print(line)
+        elif re.search("^Speed", line):
+            print(line)
+        elif re.search("^Effective", line):
+            print(line)
+        elif re.search("^Total", line):
+            print(line)
     
 
 def playCWSoundFile(wordLst):
@@ -152,11 +167,14 @@ def playCWSoundFile(wordLst):
         if file.find(EBOOK2CW_OUTPUT_BASE) > -1:
             absFile = os.path.join("/tmp", file)
             cmd = f"/usr/bin/mpg123 {absFile}"
-            proc = subprocess.run(cmd, shell=True)
+            # proc = subprocess.run(cmd, shell=True)
+            proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
             if proc.returncode:
                 print(f"mpg123 return: {proc.returncode}")
 
             time.sleep(2)
+            print("---------------------------------------------------------")
             print("words generated:")
             for word in wordLst:
                 print(f"{word}", end=" ")
@@ -176,30 +194,34 @@ def main():
     progArgs['freq'] = args.freq
     progArgs['totalWords'] = args.totalWords
     progArgs['random'] = args.random
-    progArgs['cwFileName'] = args.cwFileName
+    progArgs['mp3Filename'] = args.mp3Filename
     progArgs['play'] = args.play
     progArgs['maxWordLen'] = args.maxWordLen
     progArgs['minWordLen'] = args.minWordLen
-    print(f"args: {progArgs}")
+    progArgs['mp3Filename'] = args.mp3Filename
+    # print(f"args: {progArgs}")
 
     charList = getKochChars(progArgs['numKochChars'])
-    print(f"chars: {charList}")
+    print(f"Koch characters: {charList}")
 
     wordLst = getWordList(charList)
-    print(f"word list: {wordLst}")
+    # print(f"word list: {wordLst}")
     wordLst = applyMinMax(progArgs, wordLst)
-    print(f"word list: {wordLst}")
+    # print(f"word list: {wordLst}")
 
     if wordLst:
         random.shuffle(wordLst)
         trunWordLst = wordLst[:progArgs['totalWords']]
-        print(f"\n\nwords: {trunWordLst}")
-        print(f"num words: {len(trunWordLst)}")
+        # print(f"\n\nwords: {trunWordLst}")
+        # print(f"num words: {len(trunWordLst)}")
 
         generateCWSoundFile(progArgs, trunWordLst)
 
-        time.sleep(2)
-        playCWSoundFile(trunWordLst)
+        if progArgs['play']:
+            time.sleep(2)
+            playCWSoundFile(trunWordLst)
+        else:
+            pass
     else:
         print("No words were found using the input parameters, decrease word length")
         print("and/or increase number of characters in set.")
