@@ -7,7 +7,9 @@ import inspect
 import os
 import random
 import re
+import subprocess
 import sys
+import time
 
 
 KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
@@ -16,6 +18,11 @@ KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
               'b', '?', '4', '2', '7', 'c', '1', 'd', '6', 'x']
 
 ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
+
+EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
+
+EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
+EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
 
 
 
@@ -38,17 +45,23 @@ def parseArguments():
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
                         type=int, default=40,
                         help='Number of Koch Method characters to use')
-    parser.add_argument('-n', '--farns-min', action='store', dest='farns', type=int,
+    parser.add_argument('-m', '--max-word-len', action='store', dest='maxWordLen',
+                        type=int, default=256,
+                        help='Minimum word length')
+    parser.add_argument('-n', '--farns-wpm', action='store', dest='farns', type=int,
                         default=5,
                         help='Farnsworth character speed to generate')
     parser.add_argument('-p', '--play', action='store_true', dest='play',
                         help='Play cw word file')
     parser.add_argument('-r', '--random', action='store_true', dest='random',
                         help='Randomize words in the output')
+    parser.add_argument('-s', '--min-word-len', action='store', dest='minWordLen',
+                        type=int, default=0,
+                        help='Minimum word length')
     parser.add_argument('-t', '--tot-words', action='store', dest='totalWords',
                         type=int, default=10000,
                         help='Total number of words to output')
-    parser.add_argument('-w', '--words-min', action='store', dest='wpm', type=int,
+    parser.add_argument('-w', '--wpm', action='store', dest='wpm', type=int,
                         default=20,
                         help='Character speed (words per minute) to generate')
 
@@ -94,17 +107,63 @@ def getWordList(charList):
     return wordLst
 
 
+def applyMinMax(progArgs, lst):
+    wordLst = []
+    print(f"min: {progArgs['minWordLen']}")
+    print(f"max: {progArgs['maxWordLen']}")
+
+    for word in lst:
+        print(f"word: {word} -- len: {len(word)}")
+        if len(word) < progArgs['minWordLen']:
+            pass
+        elif len(word) > progArgs['maxWordLen']:
+            pass
+        else:
+            wordLst.append(word)
+
+    return wordLst
+
+
 def generateCWSoundFile(progArgs, wordLst):
     words = ""
 
-    # convert word list into long string of words suitable to
-    # supply as stdin for 'cwpcm' program
-    for word in wordLst:
-        words += word + " "
+    # write word list to temporary file for input to 'ebook2cw' program
+    with open(EBOOK2CW_INPUT_FILE, 'w') as fileobj:
+        for word in wordLst:
+            fileobj.write(f"{word}\n")
 
-    cmd = f"cat {words} | cwpcm"
+    for file in os.listdir('/tmp'):
+        # print(f"file: {file}")
+        if file.find(EBOOK2CW_OUTPUT_BASE) > -1 :
+            absFile = os.path.join("/tmp", file)
+            os.remove(absFile)
+            print(f"remove stale mp3 file: {absFile}")
     
+    cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
+           f"-f {progArgs['freq']} -o {EBOOK2CW_OUTPUT_FILE} {EBOOK2CW_INPUT_FILE}")
+
+    proc = subprocess.run(cmd, shell=True, capture_output=False)
+    if proc.returncode:
+        print(f"ebook2cw return: {proc.returncode}")
     
+
+def playCWSoundFile(wordLst):
+    for file in os.listdir('/tmp'):
+        if file.find(EBOOK2CW_OUTPUT_BASE) > -1:
+            absFile = os.path.join("/tmp", file)
+            cmd = f"/usr/bin/mpg123 {absFile}"
+            proc = subprocess.run(cmd, shell=True)
+            if proc.returncode:
+                print(f"mpg123 return: {proc.returncode}")
+
+            time.sleep(2)
+            print("words generated:")
+            for word in wordLst:
+                print(f"{word}", end=" ")
+
+            print("")
+
+            
     
 
 def main():
@@ -119,18 +178,31 @@ def main():
     progArgs['random'] = args.random
     progArgs['cwFileName'] = args.cwFileName
     progArgs['play'] = args.play
+    progArgs['maxWordLen'] = args.maxWordLen
+    progArgs['minWordLen'] = args.minWordLen
     print(f"args: {progArgs}")
 
     charList = getKochChars(progArgs['numKochChars'])
     print(f"chars: {charList}")
 
     wordLst = getWordList(charList)
-    random.shuffle(wordLst)
-    trunWordLst = wordLst[:progArgs['totalWords']]
-    print(f"words: {trunWordLst}")
-    print(f"num words: {len(trunWordLst)}")
+    print(f"word list: {wordLst}")
+    wordLst = applyMinMax(progArgs, wordLst)
+    print(f"word list: {wordLst}")
 
-    generateCWSoundFile(progArgs, trunWordLst)
+    if wordLst:
+        random.shuffle(wordLst)
+        trunWordLst = wordLst[:progArgs['totalWords']]
+        print(f"\n\nwords: {trunWordLst}")
+        print(f"num words: {len(trunWordLst)}")
+
+        generateCWSoundFile(progArgs, trunWordLst)
+
+        time.sleep(2)
+        playCWSoundFile(trunWordLst)
+    else:
+        print("No words were found using the input parameters, decrease word length")
+        print("and/or increase number of characters in set.")
 
     sys.exit(0)
 
