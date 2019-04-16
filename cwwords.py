@@ -11,11 +11,16 @@ import subprocess
 import sys
 import time
 
+from db import *
+
+
 
 KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
               'w', 'i', '.', 'n', 'j', 'e', 'f', '0', 'y', 'v',
               ',', 'g', '5', '/', 'q', '9', 'z', 'h', '3', '8',
               'b', '?', '4', '2', '7', 'c', '1', 'd', '6', 'x']
+
+LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
 ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
 
@@ -39,9 +44,8 @@ def parseArguments():
     parser = argparse.ArgumentParser(description='CW Words audio file generator.',
                                       epilog=p)
 
-    parser.add_argument('-o', '--sound-file', action='store', dest='mp3Filename',
-                        type=str, default=EBOOK2CW_OUTPUT_FILE,
-                        help='CW mp3 sound output file')
+    parser.add_argument('-c', '--callsigns', action='store_true', dest='callsigns',
+                        help='Generate callsigns instead of words')
     parser.add_argument('-f', '--freq', action='store', dest='freq', type=int,
                         default=600, help='CW tone frequency (Hz)')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
@@ -53,6 +57,9 @@ def parseArguments():
     parser.add_argument('-n', '--farns-wpm', action='store', dest='farns', type=int,
                         default=5,
                         help='Farnsworth character speed to generate')
+    parser.add_argument('-o', '--sound-file', action='store', dest='mp3Filename',
+                        type=str, default=EBOOK2CW_OUTPUT_FILE,
+                        help='CW mp3 sound output file')
     parser.add_argument('-p', '--play', action='store_true', dest='play',
                         help='Play cw word file')
     parser.add_argument('-r', '--random', action='store_true', dest='random',
@@ -76,6 +83,38 @@ def getKochChars(numChars):
     return KOCH_CHARS[:numChars]
 
 
+def getLOTWLogCallsigns():
+    calllst = []
+    logDbase = LogDatabase(LOG_DATABASE_FILE)          # init LogDatabase object
+    dbCallLst = logDbase.doDBQuery("select call from callsigndata")
+
+    for call in dbCallLst:
+        # print(f"call: {call[0]}")
+        calllst.append(call[0])
+
+    return calllst
+    
+
+def getCallsignList(charList):
+    callLst = []
+
+    lst = getLOTWLogCallsigns()
+    # print(f"list: {lst}")
+    
+    for call in lst:
+        for c in call:
+            cl = c.lower()
+            if cl not in charList:
+                break
+            else:
+                pass
+        else:
+            callLst.append(call)
+
+    return callLst
+            
+    
+
 def getEnglishWordFile():
     filename = inspect.getframeinfo(inspect.currentframe()).filename
     path = os.path.dirname(os.path.abspath(filename))
@@ -84,7 +123,7 @@ def getEnglishWordFile():
     for p in ENGLISH_WORD_FILE:
         wordFile = os.path.join(wordFile, p)
 
-    # print(f"filename: {wordFile}")
+    print(f"filename: {wordFile}")
     return wordFile
     
 
@@ -178,7 +217,10 @@ def playCWSoundFile(wordLst):
             print("---------------------------------------------------------")
             print("words generated:")
             for word in wordLst:
-                print(f"{word}", end=" ")
+                if word == 'vvv':
+                    pass
+                else:
+                    print(f"{word}", end=" ")
 
             print("")
 
@@ -189,6 +231,7 @@ def main():
     args = parseArguments()
 
     progArgs = {}
+    progArgs['callsigns'] = args.callsigns
     progArgs['numKochChars'] = args.numKochChars
     progArgs['farns'] = args.farns
     progArgs['wpm'] = args.wpm
@@ -205,29 +248,52 @@ def main():
     charList = getKochChars(progArgs['numKochChars'])
     print(f"Koch characters: {charList}")
 
-    wordLst = getWordList(charList)
-    # print(f"word list: {wordLst}")
-    wordLst = applyMinMax(progArgs, wordLst)
-    # print(f"word list: {wordLst}")
+    if progArgs['callsigns']:
+        print('generate callsigns instead of words')
+        callsignLst = getCallsignList(charList)
+        # print(f"calls: {callsignLst}")
 
-    if wordLst:
-        random.shuffle(wordLst)
-        trunWordLst = wordLst[:progArgs['totalWords']]
-        # print(f"\n\nwords: {trunWordLst}")
-        # print(f"num words: {len(trunWordLst)}")
+        if callsignLst:
+            random.shuffle(callsignLst)
+            trunCallsignLst = callsignLst[:progArgs['totalWords']]
 
-        # Add 'vvv' to beginning of list
-        trunWordLst.insert(0, 'vvv')
-        generateCWSoundFile(progArgs, trunWordLst)
+            # Add 'vvv' to beginning of list
+            trunCallsignLst.insert(0, 'vvv')
+            generateCWSoundFile(progArgs, trunCallsignLst)
 
-        if progArgs['play']:
-            time.sleep(2)
-            playCWSoundFile(trunWordLst)
+            if progArgs['play']:
+                time.sleep(2)
+                playCWSoundFile(trunCallsignLst)
+            else:
+                pass
         else:
-            pass
+            print("No callsigns were found using the input parameters, ")
+            print("increase number of characters in set.")
+                
     else:
-        print("No words were found using the input parameters, decrease word length")
-        print("and/or increase number of characters in set.")
+        wordLst = getWordList(charList)
+        # print(f"word list: {wordLst}")
+        wordLst = applyMinMax(progArgs, wordLst)
+        # print(f"word list: {wordLst}")
+
+        if wordLst:
+            random.shuffle(wordLst)
+            trunWordLst = wordLst[:progArgs['totalWords']]
+            # print(f"\n\nwords: {trunWordLst}")
+            # print(f"num words: {len(trunWordLst)}")
+
+            # Add 'vvv' to beginning of list
+            trunWordLst.insert(0, 'vvv')
+            generateCWSoundFile(progArgs, trunWordLst)
+
+            if progArgs['play']:
+                time.sleep(2)
+                playCWSoundFile(trunWordLst)
+            else:
+                pass
+        else:
+            print("No words were found using the input parameters, decrease word length")
+            print("and/or increase number of characters in set.")
 
     sys.exit(0)
 

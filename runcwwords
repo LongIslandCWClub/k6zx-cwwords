@@ -8,8 +8,8 @@ NUM_KOCH_CHARS=25
 WPM=20
 
 # Farnsworth effective words per minute
-# FARNSWORTH_WPM=3
-FARNSWORTH_WPM=2
+FARNSWORTH_WPM=3
+# FARNSWORTH_WPM=2
 
 # CW tone frequency
 FREQUENCY=600
@@ -23,13 +23,16 @@ MIN_WORD_LEN=3
 # Maximum word length
 MAX_WORD_LEN=8
 
-./cwwords.py -k $NUM_KOCH_CHARS \
-             -w $WPM \
-             -n $FARNSWORTH_WPM \
-             -f $FREQUENCY \
-             -t $TOTAL_WORDS \
-             -s $MIN_WORD_LEN \
-             -m $MAX_WORD_LEN \
-             -p
-#             -r \
+CMD="./cwwords.py --koch-chars $NUM_KOCH_CHARS \
+                  --wpm $WPM \
+                  --farns-wpm $FARNSWORTH_WPM \
+                  --freq $FREQUENCY \
+                  --tot-words $TOTAL_WORDS \
+                  --min-word-len $MIN_WORD_LEN \
+                  --max-word-len $MAX_WORD_LEN \
+                  --play \
+                  --random"
 
+echo $CMD
+
+$CMD
