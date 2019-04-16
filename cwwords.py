@@ -104,6 +104,7 @@ def getWordList(charList):
                 else:
                     pass
             else:
+                # print(f"word: {word}")
                 wordLst.append(word)
 
     return wordLst
@@ -215,6 +216,8 @@ def main():
         # print(f"\n\nwords: {trunWordLst}")
         # print(f"num words: {len(trunWordLst)}")
 
+        # Add 'vvv' to beginning of list
+        trunWordLst.insert(0, 'vvv')
         generateCWSoundFile(progArgs, trunWordLst)
 
         if progArgs['play']:
