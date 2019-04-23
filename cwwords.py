@@ -46,6 +46,8 @@ def parseArguments():
 
     parser.add_argument('-c', '--callsigns', action='store_true', dest='callsigns',
                         help='Generate callsigns instead of words')
+    parser.add_argument('-d', '--repeat-times', action='store', dest='repeat',
+                        type=int, help='Number of times to repeat word')
     parser.add_argument('-f', '--freq', action='store', dest='freq', type=int,
                         default=600, help='CW tone frequency (Hz)')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
@@ -232,6 +234,7 @@ def main():
 
     progArgs = {}
     progArgs['callsigns'] = args.callsigns
+    progArgs['repeat'] = args.repeat
     progArgs['numKochChars'] = args.numKochChars
     progArgs['farns'] = args.farns
     progArgs['wpm'] = args.wpm
@@ -256,6 +259,15 @@ def main():
         if callsignLst:
             random.shuffle(callsignLst)
             trunCallsignLst = callsignLst[:progArgs['totalWords']]
+
+            # if repeat is selected, repeat the words
+            if progArgs['repeat']:
+                repeatLst = []
+                for element in trunCallsignLst:
+                    for i in range(progArgs['repeat']):
+                        repeatLst.append(element)
+
+                trunCallsignLst = repeatLst
 
             # Add 'vvv' to beginning of list
             trunCallsignLst.insert(0, 'vvv')

@@ -2,7 +2,7 @@
 
 
 # The number of Koch characters to use
-NUM_KOCH_CHARS=25
+NUM_KOCH_CHARS=40
 
 # Character speed in words per minute
 WPM=20
@@ -21,7 +21,11 @@ TOTAL_WORDS=20
 MIN_WORD_LEN=3
 
 # Maximum word length
-MAX_WORD_LEN=8
+MAX_WORD_LEN=5
+
+VIRTUALENV="$HOME/devel/python/cwwords/venv/bin/activate"
+
+source $VIRTUALENV
 
 CMD="./cwwords.py --koch-chars $NUM_KOCH_CHARS \
                   --wpm $WPM \
