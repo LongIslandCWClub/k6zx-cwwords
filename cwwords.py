@@ -24,6 +24,8 @@ LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database
 
 ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
 
+FCC_CALLSIGN_FILE = ["fcc_database", "am.dat"]
+
 EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
 EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
@@ -95,13 +97,41 @@ def getLOTWLogCallsigns():
         calllst.append(call[0])
 
     return calllst
-    
+
+
+def getFCCCallsignsFile():
+    filename = inspect.getframeinfo(inspect.currentframe()).filename
+    dir = os.path.dirname(os.path.abspath(filename))
+
+    callFile = dir
+    for p in FCC_CALLSIGN_FILE:
+        callFile = os.path.join(callFile, p)
+
+    print(f"FCC callsign file: {callFile}")
+
+    return callFile
+
+
+def getFCCCallsignList():
+    callLst = []
+
+    done = False
+    with open(getFCCCallsignsFile(), 'r') as fileobj:
+        for line in fileobj:
+            call = line.strip()
+            callLst.append(call)
+
+    return callLst
+
 
 def getCallsignList(charList):
     callLst = []
 
-    lst = getLOTWLogCallsigns()
-    # print(f"list: {lst}")
+    # This function gets callsigns from my LOTW log
+    # lst = getLOTWLogCallsigns()
+
+    # This function gets callsigns from FCC datafile stored in a subdirectory
+    lst = getFCCCallsignList()
     
     for call in lst:
         for c in call:
