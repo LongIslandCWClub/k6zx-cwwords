@@ -99,6 +99,28 @@ def getLOTWLogCallsigns():
     return calllst
 
 
+def removeUSCallsigns(lst):
+    resultLst = []
+
+    # All US amateur radio callsigns contain one or two prefix letters
+    # beginning with K, N, W, AA-AL, KA-KZ, NA-NZ, or WA-WZ.
+    for call in lst:
+        if re.search('^[KNW][0-9]', call):
+            pass
+        elif re.search('^A[A-L][0-9]', call):
+            pass
+        elif re.search('^K[A-Z][0-9]', call):
+            pass
+        elif re.search('^N[A-Z][0-9]', call):
+            pass
+        elif re.search('^W[A-Z][0-9]', call):
+            pass
+        else:
+            resultLst.append(call)
+    
+    return resultLst
+    
+
 def getFCCCallsignsFile():
     filename = inspect.getframeinfo(inspect.currentframe()).filename
     dir = os.path.dirname(os.path.abspath(filename))
@@ -125,15 +147,17 @@ def getFCCCallsignList():
 
 
 def getCallsignList(charList):
-    callLst = []
+    tmpLst = []
 
-    # This function gets callsigns from my LOTW log
-    # lst = getLOTWLogCallsigns()
+    # This function gets callsigns from my LOTW log. This is done to
+    # get some foreign callsigns for the training.
+    lotwLst = getLOTWLogCallsigns()
 
-    # This function gets callsigns from FCC datafile stored in a subdirectory
-    lst = getFCCCallsignList()
-    
-    for call in lst:
+    # remove all US callsigns from this list to get just the foreign
+    # callsigns
+    foreignLst = removeUSCallsigns(lotwLst)
+
+    for call in foreignLst:
         for c in call:
             cl = c.lower()
             if cl not in charList:
@@ -141,9 +165,29 @@ def getCallsignList(charList):
             else:
                 pass
         else:
-            callLst.append(call)
+            tmpLst.append(call)
 
-    return callLst
+    foreignLst = tmpLst
+
+    # This function gets callsigns from FCC datafile stored in a
+    # subdirectory. This has many many callsigns but they are all US
+    # callsigns.
+    fccLst = getFCCCallsignList()
+
+    tmpLst = []
+    for call in fccLst:
+        for c in call:
+            cl = c.lower()
+            if cl not in charList:
+                break
+            else:
+                pass
+        else:
+            tmpLst.append(call)
+
+    fccLst = tmpLst
+
+    return fccLst, foreignLst
             
     
 
@@ -232,6 +276,15 @@ def generateCWSoundFile(progArgs, wordLst):
             print(line)
         elif re.search("^Total", line):
             print(line)
+
+            
+def removeDuplicates(lst):
+    finalLst = []
+    for elem in lst:
+        if elem not in finalLst:
+            finalLst.append(elem)
+
+    return finalLst
     
 
 def playCWSoundFile(wordLst):
@@ -248,7 +301,7 @@ def playCWSoundFile(wordLst):
             time.sleep(2)
             print("---------------------------------------------------------")
             print("words generated:")
-            for word in wordLst:
+            for word in removeDuplicates(wordLst):
                 if word == 'vvv':
                     pass
                 else:
@@ -283,29 +336,48 @@ def main():
 
     if progArgs['callsigns']:
         print('generate callsigns instead of words')
-        callsignLst = getCallsignList(charList)
-        # print(f"calls: {callsignLst}")
+        fccLst, foreignLst = getCallsignList(charList)
+        print(f"num FCC calls: {len(fccLst)}, "
+              f"num foreign calls: {len(foreignLst)}")
 
-        if callsignLst:
-            random.shuffle(callsignLst)
-            trunCallsignLst = callsignLst[:progArgs['totalWords']]
+        rnum = random.randint(60, 101) / 100
+        fccnum = int(round(progArgs['totalWords'] * rnum))
+        fornum = progArgs['totalWords'] - fccnum
+        print(f"random num: {rnum}, fcc calls: {fccnum}, "
+              f"foreign calls: {fornum}")
 
+        if fccLst:
+            random.shuffle(fccLst)
+            trunFccLst = fccLst[:progArgs['totalWords']]
+
+            if foreignLst:
+                trunFccLst = trunFccLst[:fccnum]
+
+                random.shuffle(foreignLst)
+                trunForeignLst = foreignLst[:fornum]
+
+                callsignLst = trunFccLst + trunForeignLst
+
+                random.shuffle(callsignLst)
+            else:
+                callsignLst = trunFccLst
+            
             # if repeat is selected, repeat the words
             if progArgs['repeat']:
                 repeatLst = []
-                for element in trunCallsignLst:
+                for element in callsignLst:
                     for i in range(progArgs['repeat']):
                         repeatLst.append(element)
 
-                trunCallsignLst = repeatLst
+                finalCallsignLst = repeatLst
 
             # Add 'vvv' to beginning of list
-            trunCallsignLst.insert(0, 'vvv')
-            generateCWSoundFile(progArgs, trunCallsignLst)
+            finalCallsignLst.insert(0, 'vvv')
+            generateCWSoundFile(progArgs, finalCallsignLst)
 
             if progArgs['play']:
                 time.sleep(2)
-                playCWSoundFile(trunCallsignLst)
+                playCWSoundFile(finalCallsignLst)
             else:
                 pass
         else:
