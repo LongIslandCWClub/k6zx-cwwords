@@ -2,7 +2,8 @@
 # -*- mode: python -*-
 
 
-import argparse
+# import argparse
+import configargparse
 import inspect
 import os
 import random
@@ -43,15 +44,15 @@ def parseArguments():
          "and words may be specified." 
          )
 
-    parser = argparse.ArgumentParser(description='CW Words audio file generator.',
+    parser = configargparse.ArgumentParser(description='CW Words audio file generator.',
                                       epilog=p)
 
     parser.add_argument('-c', '--callsigns', action='store_true', dest='callsigns',
                         help='Generate callsigns instead of words')
     parser.add_argument('-d', '--repeat-times', action='store', dest='repeat',
                         type=int, help='Number of times to repeat word')
-    parser.add_argument('-f', '--freq', action='store', dest='freq', type=int,
-                        default=600, help='CW tone frequency (Hz)')
+    parser.add_argument('-f', '--config-file', action='store', dest='configFile',
+                        is_config_file=True, help='Config file path')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
                         type=int, default=40,
                         help='Number of Koch Method characters to use')
@@ -71,14 +72,22 @@ def parseArguments():
     parser.add_argument('-s', '--min-word-len', action='store', dest='minWordLen',
                         type=int, default=0,
                         help='Minimum word length')
-    parser.add_argument('-t', '--tot-words', action='store', dest='totalWords',
+    parser.add_argument('-t', '--total-words', action='store', dest='totalWords',
                         type=int, default=10000,
                         help='Total number of words to output')
+    parser.add_argument('-u', '--sidetone-freq', action='store', dest='freq',
+                        type=int, default=600, help='Sidetone frequency (Hz)')
     parser.add_argument('-w', '--wpm', action='store', dest='wpm', type=int,
                         default=20,
                         help='Character speed (words per minute) to generate')
 
     args = parser.parse_args()
+
+    # print("-------------------------------------------------------------------")
+    # print(parser.format_help())
+    # print("-------------------------------------------------------------------")
+    # print(parser.format_values())
+    # print("-------------------------------------------------------------------")
 
     return args
 
