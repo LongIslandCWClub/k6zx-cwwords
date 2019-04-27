@@ -23,7 +23,8 @@ KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
 
 LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
-ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
+# ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
+ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa-no-swears.txt"]
 
 FCC_CALLSIGN_FILE = ["fcc_database", "am.dat"]
 
