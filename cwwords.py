@@ -26,8 +26,6 @@ LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database
 # ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
 # ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa-no-swears.txt"]
 
-FCC_CALLSIGN_FILE = ["fcc_database", "am.dat"]
-
 EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
 EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
@@ -83,6 +81,8 @@ def parseArguments():
                         help='Character speed (words per minute) to generate')
     parser.add_argument('-x', '--word-file', action='store', dest='wordFile',
                         help='Word file path')
+    parser.add_argument('-y', '--call-file', action='store', dest='callsignFile',
+                        help='Callsign file path')
 
     args = parser.parse_args()
 
@@ -133,24 +133,11 @@ def removeUSCallsigns(lst):
     return resultLst
     
 
-def getFCCCallsignsFile():
-    filename = inspect.getframeinfo(inspect.currentframe()).filename
-    dir = os.path.dirname(os.path.abspath(filename))
-
-    callFile = dir
-    for p in FCC_CALLSIGN_FILE:
-        callFile = os.path.join(callFile, p)
-
-    print(f"FCC callsign file: {callFile}")
-
-    return callFile
-
-
-def getFCCCallsignList():
+def getFCCCallsignList(progArgs):
     callLst = []
 
     done = False
-    with open(getFCCCallsignsFile(), 'r') as fileobj:
+    with open(progArgs['callsignFile'], 'r') as fileobj:
         for line in fileobj:
             call = line.strip()
             callLst.append(call)
@@ -158,7 +145,7 @@ def getFCCCallsignList():
     return callLst
 
 
-def getCallsignList(charList):
+def getCallsignList(progArgs, charList):
     tmpLst = []
 
     # This function gets callsigns from my LOTW log. This is done to
@@ -184,7 +171,7 @@ def getCallsignList(charList):
     # This function gets callsigns from FCC datafile stored in a
     # subdirectory. This has many many callsigns but they are all US
     # callsigns.
-    fccLst = getFCCCallsignList()
+    fccLst = getFCCCallsignList(progArgs)
 
     tmpLst = []
     for call in fccLst:
@@ -345,6 +332,9 @@ def main():
     progArgs['mp3Filename'] = args.mp3Filename
     if args.wordFile:
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
+    if args.callsignFile:
+        progArgs['callsignFile'] = os.path.abspath(args.callsignFile)
+        
     # print(f"args: {progArgs}")
 
     charList = getKochChars(progArgs['numKochChars'])
@@ -352,7 +342,7 @@ def main():
 
     if progArgs['callsigns']:
         print('generate callsigns instead of words')
-        fccLst, foreignLst = getCallsignList(charList)
+        fccLst, foreignLst = getCallsignList(progArgs, charList)
         print(f"num FCC calls: {len(fccLst)}, "
               f"num foreign calls: {len(foreignLst)}")
 
