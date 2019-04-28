@@ -24,7 +24,7 @@ KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
 LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
 # ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
-ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa-no-swears.txt"]
+# ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa-no-swears.txt"]
 
 FCC_CALLSIGN_FILE = ["fcc_database", "am.dat"]
 
@@ -81,6 +81,8 @@ def parseArguments():
     parser.add_argument('-w', '--wpm', action='store', dest='wpm', type=int,
                         default=20,
                         help='Character speed (words per minute) to generate')
+    parser.add_argument('-x', '--word-file', action='store', dest='wordFile',
+                        help='Word file path')
 
     args = parser.parse_args()
 
@@ -201,23 +203,25 @@ def getCallsignList(charList):
             
     
 
-def getEnglishWordFile():
-    filename = inspect.getframeinfo(inspect.currentframe()).filename
-    path = os.path.dirname(os.path.abspath(filename))
+# def getEnglishWordFile():
+#     filename = inspect.getframeinfo(inspect.currentframe()).filename
+#     path = os.path.dirname(os.path.abspath(filename))
 
-    wordFile = path
-    for p in ENGLISH_WORD_FILE:
-        wordFile = os.path.join(wordFile, p)
+#     wordFile = path
+#     # for p in ENGLISH_WORD_FILE:
+#     for p in 
+#         wordFile = os.path.join(wordFile, p)
 
-    print(f"filename: {wordFile}")
-    return wordFile
+#     print(f"filename: {wordFile}")
+#     return wordFile
     
 
-def getWordList(charList):
+def getWordList(progArgs, charList):
     wordLst = []
     
     done = False
-    with open(getEnglishWordFile(), 'r') as fileobj:
+    # with open(getEnglishWordFile(progArgs), 'r') as fileobj:
+    with open(progArgs['wordFile'], 'r') as fileobj:
 
         for line in fileobj:
             word = line.strip()
@@ -339,6 +343,8 @@ def main():
     progArgs['maxWordLen'] = args.maxWordLen
     progArgs['minWordLen'] = args.minWordLen
     progArgs['mp3Filename'] = args.mp3Filename
+    if args.wordFile:
+        progArgs['wordFile'] = os.path.abspath(args.wordFile)
     # print(f"args: {progArgs}")
 
     charList = getKochChars(progArgs['numKochChars'])
@@ -395,7 +401,7 @@ def main():
             print("increase number of characters in set.")
                 
     else:
-        wordLst = getWordList(charList)
+        wordLst = getWordList(progArgs, charList)
         # print(f"word list: {wordLst}")
         wordLst = applyMinMax(progArgs, wordLst)
         # print(f"word list: {wordLst}")
