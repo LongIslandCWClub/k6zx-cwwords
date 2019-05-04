@@ -278,7 +278,9 @@ def generateCWSoundFile(progArgs, wordLst):
         elif re.search("^Total", line):
             print(line)
 
-            
+
+# remove duplicate words just for display purposes, no need to show the repeated
+# words or callsigns.
 def removeDuplicates(lst):
     finalLst = []
     for elem in lst:
@@ -309,8 +311,14 @@ def playCWSoundFile(wordLst):
                     print(f"{word}", end=" ")
 
             print("")
+            print("---------------------------------------------------------")
 
-            
+            numChars = 0
+            for word in wordLst:
+                if word != 'vvv':
+                    numChars += len(word)
+
+            print(f"total characters: {numChars}")
     
 
 def main():
@@ -339,6 +347,7 @@ def main():
 
     charList = getKochChars(progArgs['numKochChars'])
     print(f"Koch characters: {charList}")
+    print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
 
     if progArgs['callsigns']:
         print('generate callsigns instead of words')
