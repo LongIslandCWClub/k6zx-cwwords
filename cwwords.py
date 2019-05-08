@@ -4,6 +4,7 @@
 
 # import argparse
 import configargparse
+import datetime
 import inspect
 import os
 import random
@@ -13,6 +14,7 @@ import sys
 import time
 
 from db import *
+from qrz import *
 
 
 
@@ -31,6 +33,11 @@ EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
 EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
 
+MY_CALLSIGN = "K6ZX"
+
+QRZ_USERNAME   = 'K6ZX'
+QRZ_PASSWORD   = 'Sean!12233'
+# QRZ_API_KEY    = '8A38-A2FB-B941-A282'
 
 
 def parseArguments():
@@ -46,8 +53,10 @@ def parseArguments():
     parser = configargparse.ArgumentParser(description='CW Words audio file generator.',
                                       epilog=p)
 
+    parser.add_argument('-b', '--words', action='store_true', dest='words',
+                        help='Generate words')
     parser.add_argument('-c', '--callsigns', action='store_true', dest='callsigns',
-                        help='Generate callsigns instead of words')
+                        help='Generate callsigns')
     parser.add_argument('-d', '--repeat-times', action='store', dest='repeat',
                         type=int, help='Number of times to repeat word')
     parser.add_argument('-f', '--config-file', action='store', dest='configFile',
@@ -66,6 +75,8 @@ def parseArguments():
                         help='CW mp3 sound output file')
     parser.add_argument('-p', '--play', action='store_true', dest='play',
                         help='Play cw word file')
+    parser.add_argument('-q', '--qsos', action='store_true', dest='qsos',
+                        help='Generate QSOs')
     parser.add_argument('-r', '--random', action='store_true', dest='random',
                         help='Randomize words in the output')
     parser.add_argument('-s', '--min-word-len', action='store', dest='minWordLen',
@@ -207,7 +218,6 @@ def getWordList(progArgs, charList):
     wordLst = []
     
     done = False
-    # with open(getEnglishWordFile(progArgs), 'r') as fileobj:
     with open(progArgs['wordFile'], 'r') as fileobj:
 
         for line in fileobj:
@@ -290,7 +300,7 @@ def removeDuplicates(lst):
     return finalLst
     
 
-def playCWSoundFile(wordLst):
+def playCWSoundFile(progArgs, wordLst):
     for file in os.listdir('/tmp'):
         if file.find(EBOOK2CW_OUTPUT_BASE) > -1:
             absFile = os.path.join("/tmp", file)
@@ -302,6 +312,11 @@ def playCWSoundFile(wordLst):
                 print(f"mpg123 return: {proc.returncode}")
 
             time.sleep(2)
+            if progArgs['qsos']:
+                end = "\n"
+            else:
+                end = " "
+                
             print("---------------------------------------------------------")
             print("words generated:")
             for word in removeDuplicates(wordLst):
@@ -319,6 +334,170 @@ def playCWSoundFile(wordLst):
                     numChars += len(word)
 
             print(f"total characters: {numChars}")
+
+
+def generateCallsigns(progArgs, charList):
+    print('Generating callsigns...')
+    fccLst, foreignLst = getCallsignList(progArgs, charList)
+    print(f"num FCC calls: {len(fccLst)}, "
+          f"num foreign calls: {len(foreignLst)}")
+
+    rnum = random.randint(60, 101) / 100
+    fccnum = int(round(progArgs['totalWords'] * rnum))
+    fornum = progArgs['totalWords'] - fccnum
+    print(f"random num: {rnum}, fcc calls: {fccnum}, "
+          f"foreign calls: {fornum}")
+
+    if fccLst:
+        random.shuffle(fccLst)
+        trunFccLst = fccLst[:progArgs['totalWords']]
+
+        if foreignLst:
+            trunFccLst = trunFccLst[:fccnum]
+
+            random.shuffle(foreignLst)
+            trunForeignLst = foreignLst[:fornum]
+
+            callsignLst = trunFccLst + trunForeignLst
+            
+            random.shuffle(callsignLst)
+        else:
+            callsignLst = trunFccLst
+            
+        # if repeat is selected, repeat the words
+        if progArgs['repeat']:
+            repeatLst = []
+            for element in callsignLst:
+                for i in range(progArgs['repeat']):
+                    repeatLst.append(element)
+
+            finalCallsignLst = repeatLst
+
+        # Add 'vvv' to beginning of list
+        finalCallsignLst.insert(0, 'vvv')
+        generateCWSoundFile(progArgs, finalCallsignLst)
+
+        if progArgs['play']:
+            time.sleep(2)
+            playCWSoundFile(finalCallsignLst)
+        else:
+            pass
+    else:
+        print("No callsigns were found using the input parameters, ")
+        print("increase number of characters in set.")
+
+
+
+def generateWords(progArgs, charList):
+    print('Generating words...')
+    wordLst = getWordList(progArgs, charList)
+    # print(f"word list: {wordLst}")
+    wordLst = applyMinMax(progArgs, wordLst)
+    # print(f"word list: {wordLst}")
+
+    if wordLst:
+        random.shuffle(wordLst)
+        trunWordLst = wordLst[:progArgs['totalWords']]
+        # print(f"\n\nwords: {trunWordLst}")
+        # print(f"num words: {len(trunWordLst)}")
+
+        # Add 'vvv' to beginning of list
+        trunWordLst.insert(0, 'vvv')
+        generateCWSoundFile(progArgs, trunWordLst)
+
+        if progArgs['play']:
+            time.sleep(2)
+            playCWSoundFile(trunWordLst)
+        else:
+            pass
+    else:
+        print("No words were found using the input parameters, decrease word length")
+        print("and/or increase number of characters in set.")
+
+
+def generateQSOs(progArgs, charList):
+    print('Generating QSOs...')
+    callLst = getLOTWLogCallsigns()
+    print(f"num LOTW calls: {len(callLst)}")
+    random.shuffle(callLst)
+    dxStation = callLst[0]
+
+    rnum = random.randint(0, 100)
+    if rnum > 50:
+        dxStation = callLst[0]
+        deStation = MY_CALLSIGN
+    else:
+        dxStation = MY_CALLSIGN
+        deStation = callLst[0]
+
+    qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
+    dxCallData = qrz.callsignData(dxStation)
+    dxOP = dxCallData['fname'].split(' ')[0]
+    dxCity = dxCallData['addr2']
+    if 'state' in dxCallData:
+        dxLoc = dxCallData['state']
+    else:
+        dxLoc = dxCallData['country']
+
+    deCallData = qrz.callsignData(deStation)
+    deOP = deCallData['fname'].split(' ')[0]
+    deCity = deCallData['addr2']
+    if 'state' in deCallData:
+        deLoc = deCallData['state']
+    else:
+        deLoc = deCallData['country']
+
+    now = datetime.datetime.now()
+    if 3 <= now.hour < 12:
+        greeting = "GM"
+    elif 12 <= now.hour < 20:
+        greeting = "GE"
+    else:
+        greeting = "GN"
+
+    deRead = random.randint(1, 5)
+    deStrgth = random.randint(1, 9)
+    deTone = random.randint(1, 9)
+    dxRead = random.randint(1, 5)
+    dxStrgth = random.randint(1, 9)
+    dxTone = random.randint(1, 9)
+    
+    qsoLst = ['vvv']
+    qsoLst.append(f"CQ CQ CQ <DE> {deStation} {deStation} {deStation} K")
+
+    qsoLst.append(f"{deStation} {deStation} {deStation} <DE> "
+                  f"{dxStation} {dxStation} {dxStation} <AR>")
+
+    qsoLst.append(f"{dxStation} <DE> {deStation} R {greeting} OM ES TNX FER CALL <BT> "
+                  f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} "
+                  f"QTH {deCity} {deLoc} {deCity} {deLoc} <BT> "
+                  f"OP {deOP} {deOP} HW? {dxStation} <DE> {deStation} K")
+
+    qsoLst.append(f"{deStation} <DE> {dxStation} <BT> {greeting} {dxOP} TNX FER RPRT "
+                  f"<BT>"
+                  f"UR RST {deRead}{deStrgth}{deTone} {deRead}{deStrgth}{deTone} <BT> "
+                  f"QTH {dxCity} {dxLoc} {dxCity} {dxLoc} <BT> "
+                  f"{deStation} <DE> {dxStation} K")
+
+    qsoLst.append(f"{dxStation} <DE> {deStation} <BT> OM TNX FER INFO ES QSO <BT> "
+                  f"{dxStation} <DE> {deStation} 73 ES HPE CU AGN <SK> TU i")
+
+    qsoLst.append(f"{deStation} <DE> {dxStation} <BT> TNX QSO OM 73 {greeting} SK TU i")
+
+    # print(f"DEBUG  qsoLst: {qsoLst}")
+
+    generateCWSoundFile(progArgs, qsoLst)
+    
+    if progArgs['play']:
+        time.sleep(2)
+        playCWSoundFile(qsoLst)
+    else:
+        pass
+
+    # print()
+    # for line in qsoLst:
+    #     print(line)
+        
     
 
 def main():
@@ -338,6 +517,8 @@ def main():
     progArgs['maxWordLen'] = args.maxWordLen
     progArgs['minWordLen'] = args.minWordLen
     progArgs['mp3Filename'] = args.mp3Filename
+    progArgs['words'] = args.words
+    progArgs['qsos'] = args.qsos
     if args.wordFile:
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
     if args.callsignFile:
@@ -350,79 +531,13 @@ def main():
     print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
 
     if progArgs['callsigns']:
-        print('generate callsigns instead of words')
-        fccLst, foreignLst = getCallsignList(progArgs, charList)
-        print(f"num FCC calls: {len(fccLst)}, "
-              f"num foreign calls: {len(foreignLst)}")
-
-        rnum = random.randint(60, 101) / 100
-        fccnum = int(round(progArgs['totalWords'] * rnum))
-        fornum = progArgs['totalWords'] - fccnum
-        print(f"random num: {rnum}, fcc calls: {fccnum}, "
-              f"foreign calls: {fornum}")
-
-        if fccLst:
-            random.shuffle(fccLst)
-            trunFccLst = fccLst[:progArgs['totalWords']]
-
-            if foreignLst:
-                trunFccLst = trunFccLst[:fccnum]
-
-                random.shuffle(foreignLst)
-                trunForeignLst = foreignLst[:fornum]
-
-                callsignLst = trunFccLst + trunForeignLst
-
-                random.shuffle(callsignLst)
-            else:
-                callsignLst = trunFccLst
-            
-            # if repeat is selected, repeat the words
-            if progArgs['repeat']:
-                repeatLst = []
-                for element in callsignLst:
-                    for i in range(progArgs['repeat']):
-                        repeatLst.append(element)
-
-                finalCallsignLst = repeatLst
-
-            # Add 'vvv' to beginning of list
-            finalCallsignLst.insert(0, 'vvv')
-            generateCWSoundFile(progArgs, finalCallsignLst)
-
-            if progArgs['play']:
-                time.sleep(2)
-                playCWSoundFile(finalCallsignLst)
-            else:
-                pass
-        else:
-            print("No callsigns were found using the input parameters, ")
-            print("increase number of characters in set.")
+        generateCallsigns(progArgs, charList)
                 
+    elif progArgs['words']:
+        generateWords(progArgs, charList)
+
     else:
-        wordLst = getWordList(progArgs, charList)
-        # print(f"word list: {wordLst}")
-        wordLst = applyMinMax(progArgs, wordLst)
-        # print(f"word list: {wordLst}")
-
-        if wordLst:
-            random.shuffle(wordLst)
-            trunWordLst = wordLst[:progArgs['totalWords']]
-            # print(f"\n\nwords: {trunWordLst}")
-            # print(f"num words: {len(trunWordLst)}")
-
-            # Add 'vvv' to beginning of list
-            trunWordLst.insert(0, 'vvv')
-            generateCWSoundFile(progArgs, trunWordLst)
-
-            if progArgs['play']:
-                time.sleep(2)
-                playCWSoundFile(trunWordLst)
-            else:
-                pass
-        else:
-            print("No words were found using the input parameters, decrease word length")
-            print("and/or increase number of characters in set.")
+        generateQSOs(progArgs, charList)
 
     sys.exit(0)
 
