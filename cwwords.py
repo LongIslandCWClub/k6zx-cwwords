@@ -59,6 +59,8 @@ def parseArguments():
                         help='Generate callsigns')
     parser.add_argument('-d', '--repeat-times', action='store', dest='repeat',
                         type=int, help='Number of times to repeat word')
+    parser.add_argument('-e', '--extra-wordspace', action='store', dest='extraWordSpace',
+                        type=int, default = 0, help='Extra word spacing between words')
     parser.add_argument('-f', '--config-file', action='store', dest='configFile',
                         is_config_file=True, help='Config file path')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
@@ -269,7 +271,8 @@ def generateCWSoundFile(progArgs, wordLst):
             print(f"remove stale mp3 file: {absFile}")
 
     cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
-           f"-f {progArgs['freq']} -o {progArgs['mp3Filename']} {EBOOK2CW_INPUT_FILE}")
+           f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} -o {progArgs['mp3Filename']} "
+           f"{EBOOK2CW_INPUT_FILE}")
 
     # proc = subprocess.run(cmd, shell=True, capture_output=True)
     proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
@@ -521,6 +524,7 @@ def main():
     progArgs['numKochChars'] = args.numKochChars
     progArgs['farns'] = args.farns
     progArgs['wpm'] = args.wpm
+    progArgs['extraWordSpace'] = args.extraWordSpace
     progArgs['freq'] = args.freq
     progArgs['totalWords'] = args.totalWords
     progArgs['random'] = args.random
