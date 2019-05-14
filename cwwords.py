@@ -60,7 +60,7 @@ def parseArguments():
     parser.add_argument('-d', '--repeat-times', action='store', dest='repeat',
                         type=int, help='Number of times to repeat word')
     parser.add_argument('-e', '--extra-wordspace', action='store', dest='extraWordSpace',
-                        type=int, default = 0, help='Extra word spacing between words')
+                        type=float, default = 0, help='Extra word spacing between words')
     parser.add_argument('-f', '--config-file', action='store', dest='configFile',
                         is_config_file=True, help='Config file path')
     parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
