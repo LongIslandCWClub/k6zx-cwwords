@@ -23,10 +23,9 @@ KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
               ',', 'g', '5', '/', 'q', '9', 'z', 'h', '3', '8',
               'b', '?', '4', '2', '7', 'c', '1', 'd', '6', 'x']
 
-LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
+VOWELS = ['a', 'e', 'i', 'o', 'u', 'y']
 
-# ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa.txt"]
-# ENGLISH_WORD_FILE = ["google-10000-english", "google-10000-english-usa-no-swears.txt"]
+LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
 EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
@@ -37,7 +36,7 @@ MY_CALLSIGN = "K6ZX"
 
 QRZ_USERNAME   = 'K6ZX'
 QRZ_PASSWORD   = 'Sean!12233'
-# QRZ_API_KEY    = '8A38-A2FB-B941-A282'
+
 
 
 def parseArguments():
@@ -79,8 +78,8 @@ def parseArguments():
                         help='Play cw word file')
     parser.add_argument('-q', '--qsos', action='store_true', dest='qsos',
                         help='Generate QSOs')
-    parser.add_argument('-r', '--random', action='store_true', dest='random',
-                        help='Randomize words in the output')
+    parser.add_argument('-r', '--rm-abbr', action='store_true', dest='rmAbbr',
+                        help='Remove abbreviations from words')
     parser.add_argument('-s', '--min-word-len', action='store', dest='minWordLen',
                         type=int, default=0,
                         help='Minimum word length')
@@ -255,6 +254,20 @@ def applyMinMax(progArgs, lst):
     return wordLst
 
 
+def removeAbbreviations(progArgs, lst):
+    if progArgs['rmAbbr']:
+        wordLst = []
+        for word in lst:
+            # print(f"DEBUG word: {word}")
+            for c in word:
+                if c in VOWELS:
+                    wordLst.append(word)
+                    break
+        return wordLst
+    else:
+        return lst
+
+
 def generateCWSoundFile(progArgs, wordLst):
     words = ""
 
@@ -397,6 +410,7 @@ def generateWords(progArgs, charList):
     # print(f"word list: {wordLst}")
     wordLst = applyMinMax(progArgs, wordLst)
     # print(f"word list: {wordLst}")
+    wordLst = removeAbbreviations(progArgs, wordLst)
 
     if wordLst:
         random.shuffle(wordLst)
@@ -527,7 +541,7 @@ def main():
     progArgs['extraWordSpace'] = args.extraWordSpace
     progArgs['freq'] = args.freq
     progArgs['totalWords'] = args.totalWords
-    progArgs['random'] = args.random
+    progArgs['rmAbbr'] = args.rmAbbr
     progArgs['mp3Filename'] = args.mp3Filename
     progArgs['play'] = args.play
     progArgs['maxWordLen'] = args.maxWordLen
