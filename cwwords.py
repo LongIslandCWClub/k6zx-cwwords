@@ -23,6 +23,11 @@ KOCH_CHARS = ['k', 'm', 'r', 's', 'u', 'a', 'p', 't', 'l', 'o',
               ',', 'g', '5', '/', 'q', '9', 'z', 'h', '3', '8',
               'b', '?', '4', '2', '7', 'c', '1', 'd', '6', 'x']
 
+CWOPS_CHARS = ['t', 'e', 'a', 'n', 'o', 'i', 's', '1', '4', 'r',
+               'h', 'd', 'l', '2', '5', 'u', 'c', 'm', 'w', '3',
+               '6', '?', 'f', 'y', 'p', 'g', '7', '9', '/', 'b',
+               'v', 'k', 'j', '8', '0', 'x', 'q', 'z', '.', ',']
+
 VOWELS = ['a', 'e', 'i', 'o', 'u', 'y']
 
 LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
@@ -52,48 +57,49 @@ def parseArguments():
     parser = configargparse.ArgumentParser(description='CW Words audio file generator.',
                                       epilog=p)
 
-    parser.add_argument('-b', '--words', action='store_true', dest='words',
+    parser.add_argument('--words', action='store_true', dest='words',
                         help='Generate words')
-    parser.add_argument('-c', '--callsigns', action='store_true', dest='callsigns',
+    parser.add_argument('--callsigns', action='store_true', dest='callsigns',
                         help='Generate callsigns')
-    parser.add_argument('-d', '--repeat-times', action='store', dest='repeat',
+    parser.add_argument('--repeat-times', action='store', dest='repeat',
                         type=int, help='Number of times to repeat word')
-    parser.add_argument('-e', '--extra-wordspace', action='store', dest='extraWordSpace',
+    parser.add_argument('--extra-wordspace', action='store', dest='extraWordSpace',
                         type=float, default = 0, help='Extra word spacing between words')
     parser.add_argument('-f', '--config-file', action='store', dest='configFile',
                         is_config_file=True, help='Config file path')
-    parser.add_argument('-k', '--koch-chars', action='store', dest='numKochChars',
-                        type=int, default=40,
-                        help='Number of Koch Method characters to use')
-    parser.add_argument('-m', '--max-word-len', action='store', dest='maxWordLen',
+    parser.add_argument('--koch-chars', action='store', dest='numKochChars',
+                        type=int, help='Number of Koch Method characters to use')
+    parser.add_argument('--cwops-chars', action='store', dest='numCWOpsChars',
+                        type=int, help='Number of CW Ops Method characters to use')
+    parser.add_argument('--max-word-len', action='store', dest='maxWordLen',
                         type=int, default=256,
                         help='Minimum word length')
-    parser.add_argument('-n', '--farns-wpm', action='store', dest='farns', type=int,
-                        default=5,
-                        help='Farnsworth character speed to generate')
-    parser.add_argument('-o', '--sound-file', action='store', dest='mp3Filename',
-                        type=str, default=EBOOK2CW_OUTPUT_FILE,
-                        help='CW mp3 sound output file')
-    parser.add_argument('-p', '--play', action='store_true', dest='play',
-                        help='Play cw word file')
-    parser.add_argument('-q', '--qsos', action='store_true', dest='qsos',
-                        help='Generate QSOs')
-    parser.add_argument('-r', '--rm-abbr', action='store_true', dest='rmAbbr',
-                        help='Remove abbreviations from words')
-    parser.add_argument('-s', '--min-word-len', action='store', dest='minWordLen',
+    parser.add_argument('--min-word-len', action='store', dest='minWordLen',
                         type=int, default=0,
                         help='Minimum word length')
-    parser.add_argument('-t', '--total-words', action='store', dest='totalWords',
-                        type=int, default=10000,
-                        help='Total number of words OR lines of QSO to output')
-    parser.add_argument('-u', '--sidetone-freq', action='store', dest='freq',
-                        type=int, default=600, help='Sidetone frequency (Hz)')
-    parser.add_argument('-w', '--wpm', action='store', dest='wpm', type=int,
+    parser.add_argument('--wpm', action='store', dest='wpm', type=int,
                         default=20,
                         help='Character speed (words per minute) to generate')
-    parser.add_argument('-x', '--word-file', action='store', dest='wordFile',
+    parser.add_argument('--farns-wpm', action='store', dest='farns', type=int,
+                        default=5,
+                        help='Farnsworth character speed to generate')
+    parser.add_argument('--sound-file', action='store', dest='mp3Filename',
+                        type=str, default=EBOOK2CW_OUTPUT_FILE,
+                        help='CW mp3 sound output file')
+    parser.add_argument('--play', action='store_true', dest='play',
+                        help='Play cw word file')
+    parser.add_argument('--qsos', action='store_true', dest='qsos',
+                        help='Generate QSOs')
+    parser.add_argument('--rm-abbr', action='store_true', dest='rmAbbr',
+                        help='Remove abbreviations from words')
+    parser.add_argument('--total-words', action='store', dest='totalWords',
+                        type=int, default=10000,
+                        help='Total number of words OR lines of QSO to output')
+    parser.add_argument('--sidetone-freq', action='store', dest='freq',
+                        type=int, default=600, help='Sidetone frequency (Hz)')
+    parser.add_argument('--word-file', action='store', dest='wordFile',
                         help='Word file path')
-    parser.add_argument('-y', '--call-file', action='store', dest='callsignFile',
+    parser.add_argument('--call-file', action='store', dest='callsignFile',
                         help='Callsign file path')
 
     args = parser.parse_args()
@@ -109,6 +115,10 @@ def parseArguments():
 
 def getKochChars(numChars):
     return KOCH_CHARS[:numChars]
+
+
+def getCWOpsChars(numChars):
+    return CWOPS_CHARS[:numChars]
 
 
 def getLOTWLogCallsigns():
@@ -536,6 +546,7 @@ def main():
     progArgs['callsigns'] = args.callsigns
     progArgs['repeat'] = args.repeat
     progArgs['numKochChars'] = args.numKochChars
+    progArgs['numCWOpsChars'] = args.numCWOpsChars
     progArgs['farns'] = args.farns
     progArgs['wpm'] = args.wpm
     progArgs['extraWordSpace'] = args.extraWordSpace
@@ -556,9 +567,14 @@ def main():
         
     # print(f"args: {progArgs}")
 
-    charList = getKochChars(progArgs['numKochChars'])
-    print(f"Koch characters: {charList}")
-    print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
+    if progArgs['numKochChars'] is not None:
+        charList = getKochChars(progArgs['numKochChars'])
+        print(f"Koch characters: {charList}")
+        print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
+    elif progArgs['numCWOpsChars'] is not None:
+        charList = getCWOpsChars(progArgs['numCWOpsChars'])
+        print(f"CW Ops characters: {charList}")
+        print(f"Number of CW Ops characters: {progArgs['numCWOpsChars']}\n")
 
     if progArgs['callsigns']:
         generateCallsigns(progArgs, charList)
