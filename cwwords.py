@@ -337,30 +337,57 @@ def playCWSoundFile(progArgs, wordLst):
             if proc.returncode:
                 print(f"mpg123 return: {proc.returncode}")
 
-            time.sleep(2)
-            if progArgs['qsos']:
-                endChar = "\n"
-            else:
-                endChar = " "
+            # time.sleep(2)
+            # if progArgs['qsos']:
+            #     endChar = "\n"
+            # else:
+            #     endChar = " "
                 
-            print("---------------------------------------------------------")
-            print("words generated:")
-            for word in removeDuplicates(wordLst):
-                if word == 'vvv':
-                    pass
-                else:
-                    print(f"{word}", end=endChar)
+            # print("---------------------------------------------------------")
+            # print("words generated:")
+            # for word in removeDuplicates(wordLst):
+            #     if word == 'vvv':
+            #         pass
+            #     else:
+            #         print(f"{word}", end=endChar)
 
-            print("")
-            print("---------------------------------------------------------")
+            # print("")
+            # print("---------------------------------------------------------")
 
-            numChars = 0
-            for word in wordLst:
-                if word != 'vvv':
-                    numChars += len(word)
+            # numChars = 0
+            # for word in wordLst:
+            #     if word != 'vvv':
+            #         numChars += len(word)
 
-            print(f"total characters: {numChars}")
+            # print(f"total characters: {numChars}")
 
+
+def displayGeneratedText(progArgs, wordLst):
+    time.sleep(2)
+    if progArgs['qsos']:
+        endChar = "\n"
+    else:
+        endChar = " "
+
+    print("---------------------------------------------------------")
+    print("words generated:")
+    for word in removeDuplicates(wordLst):
+        if word == 'vvv':
+            pass
+        else:
+            print(f"{word}", end=endChar)
+
+    print("")
+    print("---------------------------------------------------------")
+
+    numChars = 0
+    for word in wordLst:
+        if word != 'vvv':
+            numChars += len(word)
+
+    print(f"total characters: {numChars}")
+    
+    
 
 def generateCallsigns(progArgs, charList):
     print('Generating callsigns...')
@@ -399,15 +426,18 @@ def generateCallsigns(progArgs, charList):
 
             finalCallsignLst = repeatLst
 
-        # Add 'vvv' to beginning of list
-        finalCallsignLst.insert(0, 'vvv')
-        generateCWSoundFile(progArgs, finalCallsignLst)
 
         if progArgs['play']:
+            # Add 'vvv' to beginning of list
+            finalCallsignLst.insert(0, 'vvv')
+            generateCWSoundFile(progArgs, finalCallsignLst)
+            
             time.sleep(2)
             playCWSoundFile(progArgs, finalCallsignLst)
         else:
             pass
+
+        displayGeneratedText(progArgs, finalCallsignLst)
     else:
         print("No callsigns were found using the input parameters, ")
         print("increase number of characters in set.")
@@ -428,15 +458,17 @@ def generateWords(progArgs, charList):
         # print(f"\n\nwords: {trunWordLst}")
         # print(f"num words: {len(trunWordLst)}")
 
-        # Add 'vvv' to beginning of list
-        trunWordLst.insert(0, 'vvv')
-        generateCWSoundFile(progArgs, trunWordLst)
-
         if progArgs['play']:
+            # Add 'vvv' to beginning of list
+            trunWordLst.insert(0, 'vvv')
+            generateCWSoundFile(progArgs, trunWordLst)
+            
             time.sleep(2)
             playCWSoundFile(progArgs, trunWordLst)
         else:
             pass
+
+        displayGeneratedText(progArgs, trunWordLst)
     else:
         print("No words were found using the input parameters, decrease word length")
         print("and/or increase number of characters in set.")
