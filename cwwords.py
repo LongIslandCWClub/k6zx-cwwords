@@ -62,7 +62,7 @@ def parseArguments():
     parser.add_argument('--callsigns', action='store_true', dest='callsigns',
                         help='Generate callsigns')
     parser.add_argument('--repeat-times', action='store', dest='repeat',
-                        type=int, help='Number of times to repeat word')
+                        type=int, default = 1, help='Number of times to repeat word')
     parser.add_argument('--extra-wordspace', action='store', dest='extraWordSpace',
                         type=float, default = 0, help='Extra word spacing between words')
     parser.add_argument('-f', '--config-file', action='store', dest='configFile',
@@ -324,39 +324,13 @@ def playCWSoundFile(progArgs, wordLst):
             if proc.returncode:
                 print(f"mpg123 return: {proc.returncode}")
 
-            # time.sleep(2)
-            # if progArgs['qsos']:
-            #     endChar = "\n"
-            # else:
-            #     endChar = " "
-                
-            # print("---------------------------------------------------------")
-            # print("words generated:")
-            # for word in removeDuplicates(wordLst):
-            #     if word == 'vvv':
-            #         pass
-            #     else:
-            #         print(f"{word}", end=endChar)
-
-            # print("")
-            # print("---------------------------------------------------------")
-
-            # numChars = 0
-            # for word in wordLst:
-            #     if word != 'vvv':
-            #         numChars += len(word)
-
-            # print(f"total characters: {numChars}")
 
 
 def displayGeneratedText(progArgs, wordLst):
-    time.sleep(2)
-
     # get the terminal width
-    # rows, columns = os.popen('stty size', 'r').read().split()
     rows, columns = subprocess.check_output(['stty', 'size']).decode().split()
     columns = int(columns)         # convert to an integer
-    print(f"displayGeneratedText() rows {rows}, columns {columns} type {type(columns)}")
+    # print(f"displayGeneratedText() rows {rows}, columns {columns} type {type(columns)}")
 
     print("\nWords Generated:")
     print("---------------------------------------------------------")
@@ -397,8 +371,8 @@ def displayGeneratedText(progArgs, wordLst):
 def generateCallsigns(progArgs, charList):
     print('Generating callsigns...')
     fccLst, foreignLst = getCallsignList(progArgs, charList)
-    print(f"num FCC calls: {len(fccLst)}, "
-          f"num foreign calls: {len(foreignLst)}")
+    # print(f"num FCC calls: {len(fccLst)}, "
+    #       f"num foreign calls: {len(foreignLst)}")
 
     rnum = random.randint(60, 101) / 100
     fccnum = int(round(progArgs['totalWords'] * rnum))
@@ -421,7 +395,8 @@ def generateCallsigns(progArgs, charList):
             random.shuffle(callsignLst)
         else:
             callsignLst = trunFccLst
-            
+
+        finalCallsignLst = []
         # if repeat is selected, repeat the words
         if progArgs['repeat']:
             repeatLst = []
