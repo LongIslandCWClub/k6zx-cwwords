@@ -212,19 +212,6 @@ def getCallsignList(progArgs, charList):
             
     
 
-# def getEnglishWordFile():
-#     filename = inspect.getframeinfo(inspect.currentframe()).filename
-#     path = os.path.dirname(os.path.abspath(filename))
-
-#     wordFile = path
-#     # for p in ENGLISH_WORD_FILE:
-#     for p in 
-#         wordFile = os.path.join(wordFile, p)
-
-#     print(f"filename: {wordFile}")
-#     return wordFile
-    
-
 def getWordList(progArgs, charList):
     wordLst = []
     
@@ -364,17 +351,35 @@ def playCWSoundFile(progArgs, wordLst):
 
 def displayGeneratedText(progArgs, wordLst):
     time.sleep(2)
-    if progArgs['qsos']:
-        endChar = "\n"
-    else:
-        endChar = " "
 
+    # get the terminal width
+    # rows, columns = os.popen('stty size', 'r').read().split()
+    rows, columns = subprocess.check_output(['stty', 'size']).decode().split()
+    columns = int(columns)         # convert to an integer
+    print(f"displayGeneratedText() rows {rows}, columns {columns} type {type(columns)}")
+
+    print("\nWords Generated:")
     print("---------------------------------------------------------")
-    print("words generated:")
-    for word in removeDuplicates(wordLst):
+    numChars = 0
+    # for word in removeDuplicates(wordLst):
+    rwordLst = removeDuplicates(wordLst)
+    for index, word in enumerate(rwordLst):
+        # print(f"word list: {index}  {word}")
+        if progArgs['qsos']:
+            endChar = "\n"
+        else:
+            endChar = " "
+        
         if word == 'vvv':
             pass
         else:
+            numChars += len(word) + 1
+            numNextChars = numChars + len(rwordLst[index])
+                                 
+            if numNextChars >= columns:       # print a newline if more chars than
+                endChar = '\n'                # terminal width
+                numChars = 0
+                
             print(f"{word}", end=endChar)
 
     print("")
