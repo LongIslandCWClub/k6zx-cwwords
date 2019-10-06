@@ -346,7 +346,7 @@ def displayGeneratedText(progArgs, wordLst):
         else:
             endChar = " "
         
-        if word == 'vvv':
+        if word == 'vvvv':
             pass
         else:
             numChars += len(word) + 1
@@ -363,7 +363,7 @@ def displayGeneratedText(progArgs, wordLst):
 
     numChars = 0
     for word in wordLst:
-        if word != 'vvv':
+        if word != 'vvvv':
             numChars += len(word)
 
     print(f"total characters: {numChars}")
@@ -410,8 +410,8 @@ def generateCallsigns(progArgs, charList):
 
 
         if progArgs['play']:
-            # Add 'vvv' to beginning of list
-            finalCallsignLst.insert(0, 'vvv')
+            # Add 'vvvv' to beginning of list
+            finalCallsignLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, finalCallsignLst)
             
             time.sleep(2)
@@ -441,8 +441,8 @@ def generateWords(progArgs, charList):
         # print(f"num words: {len(trunWordLst)}")
 
         if progArgs['play']:
-            # Add 'vvv' to beginning of list
-            trunWordLst.insert(0, 'vvv')
+            # Add 'vvvv' to beginning of list
+            trunWordLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, trunWordLst)
             
             time.sleep(2)
@@ -503,7 +503,7 @@ def generateQSOs(progArgs, charList):
     dxStrgth = random.randint(1, 9)
     dxTone = random.randint(1, 9)
 
-    qsoLst = ['vvv']
+    qsoLst = ['vvvv']
 
     # use a random number to decide on number of CQs
     if dxTone > 5:
