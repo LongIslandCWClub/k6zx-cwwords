@@ -46,7 +46,7 @@ class QRZ:
         raise Exception('could not get QRZ session')
 
 
-    def callsignData(self, callsign, retry=True):
+    def callsignData(self, callsign, retry=True, verbose=True):
         if self._session_key is None:
             self._get_session()
 
@@ -80,7 +80,8 @@ class QRZ:
         else:
             callData = raw.get('Callsign')
             if callData:
-                print(f"Rcvd QRZ data for: {callsign}")
+                if verbose:
+                    print(f"Rcvd QRZ data for: {callsign}")
                 return callData
 
         raise Exception("Unhandled Error during Query")

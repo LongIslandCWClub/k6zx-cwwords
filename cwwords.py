@@ -2,7 +2,6 @@
 # -*- mode: python -*-
 
 
-# import argparse
 import configargparse
 import datetime
 import inspect
@@ -42,6 +41,7 @@ MY_CALLSIGN = "K6ZX"
 QRZ_USERNAME   = 'K6ZX'
 QRZ_PASSWORD   = 'Sean!12233'
 
+MAX_QSO_LINES  = 6
 
 
 def parseArguments():
@@ -95,6 +95,8 @@ def parseArguments():
     parser.add_argument('--total-words', action='store', dest='totalWords',
                         type=int, default=10000,
                         help='Total number of words OR lines of QSO to output')
+    parser.add_argument('--qso-line', action='store', dest='qsoLine',
+                        type=str)
     parser.add_argument('--sidetone-freq', action='store', dest='freq',
                         type=int, default=600, help='Sidetone frequency (Hz)')
     parser.add_argument('--word-file', action='store', dest='wordFile',
@@ -472,7 +474,7 @@ def generateQSOs(progArgs, charList):
         deStation = callLst[0]
 
     qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
-    dxCallData = qrz.callsignData(dxStation)
+    dxCallData = qrz.callsignData(dxStation, verbose=False)
     dxOP = dxCallData['fname'].split(' ')[0]
     dxCity = dxCallData['addr2']
     if 'state' in dxCallData:
@@ -480,7 +482,7 @@ def generateQSOs(progArgs, charList):
     else:
         dxLoc = dxCallData['country']
 
-    deCallData = qrz.callsignData(deStation)
+    deCallData = qrz.callsignData(deStation, verbose=False)
     deOP = deCallData['fname'].split(' ')[0]
     deCity = deCallData['addr2']
     if 'state' in deCallData:
@@ -504,40 +506,53 @@ def generateQSOs(progArgs, charList):
     dxTone = random.randint(1, 9)
 
     qsoLst = ['vvvv']
+    qsoLine = []
+    if progArgs['qsoLine'] == None:
+        qsoLine = [1, 2, 3, 4, 5, 6]
+    else:
+        for item in progArgs['qsoLine'].split(','):
+            qsoLine.append(int(item))
+    
+    if qsoLine == []:
+        qsoLine = [1, 2, 3, 4, 5, 6]
 
     # use a random number to decide on number of CQs
-    if dxTone > 5:
-        qsoLst.append(f"CQ CQ CQ <DE> {deStation} {deStation} {deStation} K")
-        if progArgs['totalWords'] > 1:
-            qsoLst.append(f"{deStation} {deStation} {deStation} <DE> "
+    if 1 in qsoLine:
+        if dxTone > 5:
+            qsoLst.append(f"CQ CQ CQ DE {deStation} {deStation} {deStation} K")
+        else:
+            qsoLst.append(f"CQ CQ DE {deStation} {deStation} K")
+
+    #    if qsoLine == MAX_QSO_LINES or qsoLine == 2:
+    if 2 in qsoLine:
+        if dxTone > 5:
+            qsoLst.append(f"{deStation} {deStation} {deStation} DE "
                           f"{dxStation} {dxStation} {dxStation} <AR>")
-    else:
-        qsoLst.append(f"CQ CQ <DE> {deStation} {deStation} K")
-        if progArgs['totalWords'] > 1:
-            qsoLst.append(f"{deStation} {deStation} <DE> "
+        else:
+            qsoLst.append(f"{deStation} {deStation} DE "
                           f"{dxStation} {dxStation} <AR>")
             
-    if progArgs['totalWords'] > 2:
-        qsoLst.append(f"{dxStation} <DE> {deStation} R {greeting} OM ES TNX FER CALL <BT> "
+    if 3 in qsoLine:
+        qsoLst.append(f"{dxStation} DE {deStation} R {greeting} OM ES TNX FER CALL <BT> "
                       f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} "
-                      f"QTH {deCity} {deLoc} {deCity} {deLoc} <BT> "
-                      f"OP {deOP} {deOP} HW? {dxStation} <DE> {deStation} K")
+                      f"QTH ES {deCity} {deLoc} {deCity} {deLoc} <BT> "
+                      f"OP ES {deOP} {deOP} HW? {dxStation} DE {deStation} K")
 
-    if progArgs['totalWords'] > 3:
-        qsoLst.append(f"{deStation} <DE> {dxStation} <BT> {greeting} {dxOP} TNX FER RPRT "
+    if 4 in qsoLine:
+        qsoLst.append(f"{deStation} DE {dxStation} <BT> {greeting} {dxOP} TNX FER RPRT "
                       f"<BT>"
                       f"UR RST {deRead}{deStrgth}{deTone} {deRead}{deStrgth}{deTone} <BT> "
                       f"QTH {dxCity} {dxLoc} {dxCity} {dxLoc} <BT> "
-                      f"{deStation} <DE> {dxStation} K")
+                      f"{deStation} DE {dxStation} K")
 
-    if progArgs['totalWords'] > 4:
-        qsoLst.append(f"{dxStation} <DE> {deStation} <BT> OM TNX FER INFO ES QSO <BT> "
-                      f"{dxStation} <DE> {deStation} 73 ES HPE CU AGN <SK> TU i")
+    if 5 in qsoLine:
+        qsoLst.append(f"{dxStation} DE {deStation} <BT> OM TNX FER INFO ES QSO <BT> "
+                      f"{dxStation} DE {deStation} 73 ES HPE CU AGN <SK> TU i")
 
-    if progArgs['totalWords'] > 5:
-        qsoLst.append(f"{deStation} <DE> {dxStation} <BT> TNX QSO OM 73 {greeting} SK TU i")
+    if 6 in qsoLine:
+        qsoLst.append(f"{deStation} DE {dxStation} <BT> TNX QSO OM 73 {greeting} SK TU i")
 
-    # print(f"DEBUG  qsoLst: {qsoLst}")
+    print(f"DEBUG  qsoLst: {qsoLst}")
 
     generateCWSoundFile(progArgs, qsoLst)
     
@@ -546,6 +561,8 @@ def generateQSOs(progArgs, charList):
         playCWSoundFile(progArgs, qsoLst)
     else:
         pass
+
+    displayGeneratedText(progArgs, qsoLst)
 
     # print()
     # for line in qsoLst:
@@ -566,6 +583,7 @@ def main():
     progArgs['extraWordSpace'] = args.extraWordSpace
     progArgs['freq'] = args.freq
     progArgs['totalWords'] = args.totalWords
+    progArgs['qsoLine'] = args.qsoLine
     progArgs['rmAbbr'] = args.rmAbbr
     progArgs['mp3Filename'] = args.mp3Filename
     progArgs['play'] = args.play
