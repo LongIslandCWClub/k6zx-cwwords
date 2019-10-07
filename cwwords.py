@@ -534,9 +534,9 @@ def generateQSOs(progArgs, charList):
             
     if 3 in qsoLine:
         qsoLst.append(f"{dxStation} DE {deStation} R {greeting} OM ES TNX FER CALL <BT> "
-                      f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} "
-                      f"QTH ES {deCity} {deLoc} {deCity} {deLoc} <BT> "
-                      f"OP ES {deOP} {deOP} HW? {dxStation} DE {deStation} K")
+                      f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+                      f"QTH HR {deCity} {deLoc} {deCity} {deLoc} <BT> "
+                      f"NAME ES {deOP} {deOP} HW? {dxStation} DE {deStation} K")
 
     if 4 in qsoLine:
         qsoLst.append(f"{deStation} DE {dxStation} <BT> {greeting} {dxOP} TNX FER RPRT "
@@ -552,7 +552,7 @@ def generateQSOs(progArgs, charList):
     if 6 in qsoLine:
         qsoLst.append(f"{deStation} DE {dxStation} <BT> TNX QSO OM 73 {greeting} SK TU i")
 
-    print(f"DEBUG  qsoLst: {qsoLst}")
+    # print(f"DEBUG  qsoLst: {qsoLst}")
 
     generateCWSoundFile(progArgs, qsoLst)
     
