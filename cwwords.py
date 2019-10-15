@@ -218,6 +218,8 @@ def getCallsignList(progArgs, charList):
 
 def getWordList(progArgs, charList):
     wordLst = []
+
+    print(f"word file: {progArgs['wordFile']}")
     
     done = False
     with open(progArgs['wordFile'], 'r') as fileobj:
@@ -227,7 +229,7 @@ def getWordList(progArgs, charList):
             # print(f"word: {word}")
 
             for c in word:
-                if c not in charList:
+                if (c not in charList) and (c.lower() not in charList):
                     break
                 else:
                     pass
@@ -434,7 +436,7 @@ def generateWords(progArgs, charList):
     # print(f"word list: {wordLst}")
     wordLst = applyMinMax(progArgs, wordLst)
     # print(f"word list: {wordLst}")
-    wordLst = removeAbbreviations(progArgs, wordLst)
+    # wordLst = removeAbbreviations(progArgs, wordLst)
 
     if wordLst:
         random.shuffle(wordLst)
@@ -466,7 +468,8 @@ def generateQSOs(progArgs, charList):
     dxStation = callLst[0]
 
     rnum = random.randint(0, 100)
-    if rnum > 50:
+    # if rnum > 50:
+    if rnum > 100:      # modify so call is always TO me, not FROM me
         dxStation = callLst[0]
         deStation = MY_CALLSIGN
     else:
@@ -518,7 +521,7 @@ def generateQSOs(progArgs, charList):
 
     # use a random number to decide on number of CQs
     if 1 in qsoLine:
-        if dxTone > 5:
+        if dxTone > 2:
             qsoLst.append(f"CQ CQ CQ DE {deStation} {deStation} {deStation} K")
         else:
             qsoLst.append(f"CQ CQ DE {deStation} {deStation} K")
