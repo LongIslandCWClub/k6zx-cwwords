@@ -103,8 +103,8 @@ def parseArguments():
                         help='Word file path')
     parser.add_argument('--call-file', action='store', dest='callsignFile',
                         help='Callsign file path')
-    parser.add_argument('--common-file', action='store', dest='commonFile',
-                        help='Common words file path')
+    # parser.add_argument('--common-file', action='store', dest='commonFile',
+    #                     help='Common words file path')
 
     args = parser.parse_args()
 
@@ -134,7 +134,8 @@ def displayParameters(args):
     text += (f"WPM: {args['wpm']}, Farns WPM: {args['farns']}, "
              f"extra space: {args['extraWordSpace']} sec")
     if args['repeat'] is not None:
-        text += f"\nrepeat: {args['repeat']}"
+        text += f"\nrepeat: {args['repeat']}, file: {args['wordFile']}"
+        
 
     print(text)
 
@@ -613,8 +614,8 @@ def main():
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
     if args.callsignFile:
         progArgs['callsignFile'] = os.path.abspath(args.callsignFile)
-    if args.commonFile:
-        progArgs['commonFile'] = os.path.abspath(args.commonFile)
+    # if args.commonFile:
+    #     progArgs['commonFile'] = os.path.abspath(args.commonFile)
         
     # print(f"args: {progArgs}")
 
