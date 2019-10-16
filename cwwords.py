@@ -240,8 +240,15 @@ def getWordList(progArgs, charList):
     with open(progArgs['wordFile'], 'r') as fileobj:
 
         for line in fileobj:
-            word = line.strip()
-            # print(f"word: {word}")
+            line = line.strip()
+            # print(f"line: {line}")
+
+            # this allows there to be an explanation of some Q codes or
+            # abbreviations in the file, delimited by '-'
+            lst = line.split('-')
+            # print(f"lst: {lst}")
+
+            word = lst[0]
 
             for c in word:
                 if (c not in charList) and (c.lower() not in charList):

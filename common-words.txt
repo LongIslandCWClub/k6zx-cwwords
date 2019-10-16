@@ -98,177 +98,175 @@ give
 day
 most
 us
-33
-55
-73
-88
-A
-ABT
-AGN
-ANS
-ANT
-B4
-BC
-BCNU
-BD
-BK
-BN
-BEN
-BTU
-BURO
-C
-CB
-CBA
-CFM
-CL
-CLG
-CLR
-CONDX
-CONGRATS
-CPY
-CQ
-CUD
-DE
-DR
-DSW
-DWN
-DX
-EFHW
-EL
-ENUF
-ES
-FB
-FD
-FER
-FIST
-FONE
-FM
-FQ
-FREQ
-GA
-GB
-GD
-GE
-GG
-GM
-GN
-GND
-GP
-GUD
-HAM
-HC
-HI
-HNY
-HPE
-HR
-HV
-HVY
-HW
-HW?
-INV VEE
-JMP
-K
-KN
-KNW
-LID
-LP
-LSB
-LW
-MGR
-MNI
-MSG
-MULT
-N
-NIL
-NR
-NW
-OB
-OC
-OM
-OP
-OPR
-OT
-PSE
-PWR
-PO
-PFX
-R
-RCV
-RCVD
-RCVR
-RIG
-RPRT
-RPT
-RX
-SHUD
-SHD
-SIG
-SK
-SKED
-SN
-SNW
-SP
-SRI
-STN
-SWL
-T
-TEMP
-TEST
-TFC
-TIL
-TKS
-TCVR
-XCVR
-TT
-TU
-TX
-TNX
-U
-UFB
-UR
-USB
-VERT
-VY
-W
-WATSA
-WID
-WK
-WKD
-WKG
-WL
-WPM
-WRK
-WUD
-WX
-XCVR
-XMTR
-XTAL
-XYL
-YF
-YL
-YR
-YRS
-Z
-ZZ
-QRL
-QRM
-QRN
-QRO
-QRP
-QRS
-QRT
-QRU
-QRV
-QRX
-QRZ
-QSB
-QSD
-QSL
-QSP
-QSV
-QSX
-QSY
-QSZ
-QTH
-QTR
-
+33       - fondest regards
+55       - best success
+73       - best regards
+88       - love & kisses
+A        - shorthand number 1
+ABT      - about
+AGN      - again
+ANS      - answer
+ANT      - antenna
+B4       - before
+BC       - broadcast
+BCNU     - be seeing you
+BD       - bad
+BK       - back or break
+BN       - been
+BEN      - been
+BTU      - back to you
+BURO     - QSL Bureau
+C        - correct
+CB       - callbook or Citizens Band
+CBA      - callbook address
+CFM      - confirm
+CL       - closing station down
+CLG      - calling
+CLR      - clear
+CONDX    - conditions
+CONGRATS - congratulations
+CPY      - copy
+CQ       - general call for CQ
+CUD      - could
+DE       - from (this is)
+DR       - dear
+DSW      - see you again (russian)
+DWN      - down
+DX       - long distance contact
+EFHW     - end fed half wave
+EL       - element
+ENUF     - enough
+ES       - and
+FB       - fine business
+FD       - field day
+FER      - for
+FIST     - unique characteristic of operator's sending
+FONE     - voice (as in SSB)
+FM       - from
+FQ       - frequency
+FREQ     - frequency
+GA       - good afternoon
+GB       - goodbye
+GD       - good day
+GE       - good evening
+GG       - going
+GM       - good morning
+GN       - good night
+GND      - ground
+GP       - ground plane
+GUD      - good
+HAM      - amateur radio operator
+HC       - home call
+HI       - laughter on CW
+HNY      - happy new year
+HPE      - hope
+HR       - hear
+HV       - have
+HVY      - heavy
+HW       - how
+HW?      - how copy?
+INV VEE  - inverted vee antenna
+JMP      - jump
+K        - over (ok for other station to transmit)
+KN       - over only to station I'm working
+KNW      - know
+LID      - poor operator
+LP       - log periodic
+LSB      - lower sideband
+LW       - long wire antenna
+MGR      - QSL manager
+MNI      - many
+MSG      - message
+MULT     - multiplier
+N        - no or number 9
+NIL      - nothing heard or no copy
+NR       - near
+NW       - now or northwest
+OB       - old boy
+OC       - old chap
+OM       - old man
+OP       - operator (name)
+OPR      - operator or operate
+OT       - old timer
+PSE      - please
+PWR      - power
+PO       - power output
+PFX      - prefix
+R        - message received
+RCV      - receive
+RCVD     - received
+RCVR     - receiver
+RIG      - radio equipment
+RPRT     - report
+RPT      - repeat or report
+RX       - receiver
+SHUD     - should
+SHD      - should
+SIG      - signal
+SK       - this is my last transmission
+SKED     - schedule
+SN       - soon
+SNW      - snow
+SP       - short path
+SRI      - sorry
+STN      - station
+SWL      - short wave listener
+T        - short hand for number zero
+TEMP     - temperature
+TEST     - contest
+TFC      - traffic
+TIL      - until
+TKS      - thanks
+TCVR     - transceiver
+XCVR     - transceiver
+TT       - that
+TU       - thank you
+TX       - transmitter
+TNX      - thanks
+U        - you
+UFB      - ultra find business (excellent)
+UR       - your
+USB      - upper sideband
+VERT     - vertical antenna
+VY       - very
+W        - watts
+WATSA    - what'cha say
+WID      - with
+WK       - work
+WKD      - worked
+WKG      - working
+WL       - will
+WPM      - words per minute
+WRK      - work
+WUD      - would
+WX       - weather
+XCVR     - transceiver
+XMTR     - transmitter
+XTAL     - crystal
+XYL      - wife
+YF       - wife
+YL       - young lady
+YR       - your or years
+YRS      - your or yearsZ
+ZZ       - sleep
+QRL      - are you busy?  | I am busy
+QRM      - are you being interfered with? | I am being interfered with
+QRN      - do you have static?  |  I have static
+QRO      - should I increase power?  |  increase power
+QRP      - should I decrease power?  |  decrease power  | low power operation
+QRS      - should I send more slowly?  |  send more slowly
+QRT      - should I stop transmitting?  | stop transmitting
+QRU      - have you anything for me?  | I have nothing for you
+QRV      - are you ready?  |  I am ready
+QRX      - when will you call again?  |  I will call again at ...
+QRZ      - who is calling me?  |  You are being called by ...
+QSB      - is the strength of my signal varying?  |  You signal strength is varying
+QSD      - is my keying correct, signals distinct ?  |  your keying is incorrect
+QSL      - can you acknowledge receipt ?  |  I am acknowledging receipt
+QSP      - will you relay to?  |  I will relay to ...
+QSV      - shall I send series of VVV?  |  send a series of VVV
+QSX      - will you listen for callsign ... on freq ...?  |  I am listening for ... on freq ...
+QSY      - shall I change freq?  |  change freq
+QSZ      - shall I send each work twice?  |  send each word twice
+QTH      - what is your position?  |  my position is ...
+QTR      - what is the exact time? | the exact time is ...
