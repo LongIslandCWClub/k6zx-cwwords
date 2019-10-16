@@ -125,6 +125,20 @@ def getCWOpsChars(numChars):
     return CWOPS_CHARS[:numChars]
 
 
+def displayParameters(args):
+    if args['numKochChars'] is not None:
+        text = f"Num Koch chars: {args['numKochChars']}, "
+    else:
+        text = f"Num CWOPS chars: {args['numCWOpsChars']}, "
+
+    text += (f"WPM: {args['wpm']}, Farns WPM: {args['farns']}, "
+             f"extra space: {args['extraWordSpace']} sec")
+    if args['repeat'] is not None:
+        text += f"\nrepeat: {args['repeat']}"
+
+    print(text)
+
+    
 def getLOTWLogCallsigns():
     calllst = []
     logDbase = LogDatabase(LOG_DATABASE_FILE)          # init LogDatabase object
@@ -219,7 +233,7 @@ def getCallsignList(progArgs, charList):
 def getWordList(progArgs, charList):
     wordLst = []
 
-    print(f"word file: {progArgs['wordFile']}")
+    # print(f"word file: {progArgs['wordFile']}")
     
     done = False
     with open(progArgs['wordFile'], 'r') as fileobj:
@@ -284,7 +298,7 @@ def generateCWSoundFile(progArgs, wordLst):
         if file.find(EBOOK2CW_OUTPUT_BASE) > -1 :
             absFile = os.path.join("/tmp", file)
             os.remove(absFile)
-            print(f"remove stale mp3 file: {absFile}")
+            # print(f"remove stale mp3 file: {absFile}")
 
     cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
            f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} -o {progArgs['mp3Filename']} "
@@ -296,16 +310,17 @@ def generateCWSoundFile(progArgs, wordLst):
     if proc.returncode:
         print(f"ebook2cw return: {proc.returncode}")
     for line in proc.stdout.split('\n'):
-        # if line.find('ebook2cw') > -1:
+        # if re.search("^ebook2cw", line):
         #     print(line)
-        if re.search("^ebook2cw", line):
+        # elif re.search("^Speed", line):
+        #     print(line)
+        # elif re.search("^Effective", line):
+        #     print(line)
+        # elif re.search("^Total", line):
+        #     print(line)
+        if re.search("^Total", line):
             print(line)
-        elif re.search("^Speed", line):
-            print(line)
-        elif re.search("^Effective", line):
-            print(line)
-        elif re.search("^Total", line):
-            print(line)
+        
 
 
 # remove duplicate words just for display purposes, no need to show the repeated
@@ -383,8 +398,7 @@ def generateCallsigns(progArgs, charList):
     rnum = random.randint(60, 101) / 100
     fccnum = int(round(progArgs['totalWords'] * rnum))
     fornum = progArgs['totalWords'] - fccnum
-    print(f"random num: {rnum}, fcc calls: {fccnum}, "
-          f"foreign calls: {fornum}")
+    print(f"fcc calls: {fccnum}, foreign calls: {fornum}")
 
     if fccLst:
         random.shuffle(fccLst)
@@ -431,7 +445,7 @@ def generateCallsigns(progArgs, charList):
 
 
 def generateWords(progArgs, charList):
-    print('Generating words...')
+    # print('Generating words...')
     wordLst = getWordList(progArgs, charList)
     # print(f"word list: {wordLst}")
     wordLst = applyMinMax(progArgs, wordLst)
@@ -606,13 +620,15 @@ def main():
 
     if progArgs['numKochChars'] is not None:
         charList = getKochChars(progArgs['numKochChars'])
-        print(f"Koch characters: {charList}")
-        print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
+        # print(f"Koch characters: {charList}")
+        # print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
     elif progArgs['numCWOpsChars'] is not None:
         charList = getCWOpsChars(progArgs['numCWOpsChars'])
-        print(f"CW Ops characters: {charList}")
-        print(f"Number of CW Ops characters: {progArgs['numCWOpsChars']}\n")
+        # print(f"CW Ops characters: {charList}")
+        # print(f"Number of CW Ops characters: {progArgs['numCWOpsChars']}\n")
 
+    displayParameters(progArgs)
+    
     if progArgs['callsigns']:
         generateCallsigns(progArgs, charList)
     elif progArgs['words']:
