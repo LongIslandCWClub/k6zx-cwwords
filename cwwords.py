@@ -132,9 +132,12 @@ def displayParameters(args):
         text = f"Num CWOPS chars: {args['numCWOpsChars']}, "
 
     text += (f"WPM: {args['wpm']}, Farns WPM: {args['farns']}, "
-             f"extra space: {args['extraWordSpace']} sec")
+             f"extra space: {args['extraWordSpace']} sec\n")
     if args['repeat'] is not None:
-        text += f"\nrepeat: {args['repeat']}, file: {args['wordFile']}"
+        text += f"repeat: {args['repeat']}, "
+
+    if 'wordFile' in args and args['wordFile'] is not None:
+        text += f"file: {args['wordFile']}"
         
 
     print(text)
