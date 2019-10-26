@@ -251,17 +251,24 @@ def getWordList(progArgs, charList):
             lst = line.split('-')
             # print(f"lst: {lst}")
 
-            word = lst[0]
+            word = lst[0].strip()
+            word = word.lower()
 
             for c in word:
-                if (c not in charList) and (c.lower() not in charList):
+                # if (c not in charList) and (c.lower() not in charList):
+                if c not in charList:
+                    # print(f"c: {c}, word: {word}")
                     break
                 else:
                     pass
             else:
-                # print(f"word: {word}")
+                # print(f"append: {word}")
                 wordLst.append(word)
 
+    # debug
+    # print(wordLst)
+    # sys.exit(0)
+    
     return wordLst
 
 
