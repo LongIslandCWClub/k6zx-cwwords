@@ -8,6 +8,7 @@ import inspect
 import os
 import random
 import re
+import string
 import subprocess
 import sys
 import time
@@ -155,6 +156,78 @@ def getLOTWLogCallsigns():
     return calllst
 
 
+def generateUSCallsigns():
+    callLst = []
+
+    # Extra class; K, N, W; two letter suffix
+    for a in ['K', 'N', 'W']:
+        for b in string.digits:
+            for c in string.ascii_uppercase:
+                for d in string.ascii_uppercase:
+                    call = f"{a}{b}{c}{d}"
+                    callLst.append(call)
+
+    # Extra class; A, K, N, W; 1 letter suffix
+    for a in ['A', 'K', 'N', 'W']:
+        for b in string.ascii_uppercase:
+            for c in string.digits:
+                for d in string.ascii_uppercase:
+                    call = f"{a}{b}{c}{d}"
+                    callLst.append(call)
+                    callLst += callLst
+
+    # Extra class; AL, KL, NL, WL; 1 letter suffix
+    for a in ['AL', 'KL', 'NL', 'WL']:
+        for c in string.digits:
+            for d in string.ascii_uppercase:
+                call = f"{a}{c}{d}"
+                callLst.append(call)
+                callLst += callLst
+
+    # Extra class; KP, NP, WP; 1 letter suffix
+    for a in ['KP', 'NP', 'WP']:
+        for c in string.digits[1:6]:
+            for d in string.ascii_uppercase:
+                call = f"{a}{c}{d}"
+                callLst.append(call)
+                callLst += callLst
+
+    # Extra class; AH, KH, NH, WH; 1 letter suffix
+    for a in ['AH', 'KH', 'NH', 'WH']:
+        for c in string.digits[1:6]:
+            for d in string.ascii_uppercase:
+                call = f"{a}{c}{d}"
+                callLst.append(call)
+                callLst += callLst
+
+    # Advanced class; K, N, W; 2 letter prefix, 2 letter suffix
+    for a in ['K', 'N', 'W']:
+        for b in string.ascii_uppercase:
+            for c in string.digits:
+                for d in string.ascii_uppercase:
+                    for e in string.ascii_uppercase:
+                        call = f"{a}{b}{c}{d}{e}"
+                        callLst.append(call)
+                        callLst += callLst
+                        
+    # General/Technician class; K, N, W; 2 letter prefix, 3 letter suffix
+    for a in ['K', 'N', 'W']:
+        for b in string.ascii_uppercase:
+            for c in string.digits:
+                for d in string.ascii_uppercase:
+                    for e in string.ascii_uppercase:
+                        for f in string.ascii_uppercase:
+                            call = f"{a}{b}{c}{d}{e}{f}"
+                            callLst.append(call)
+                            callLst += callLst
+                            
+    
+    # Extra class, two letter prefix, A, N, K, W
+
+
+    return callLst
+
+
 def removeUSCallsigns(lst):
     resultLst = []
 
@@ -173,9 +246,9 @@ def removeUSCallsigns(lst):
             pass
         else:
             resultLst.append(call)
-    
+            
     return resultLst
-    
+
 
 def getFCCCallsignList(progArgs):
     callLst = []
@@ -194,8 +267,22 @@ def getCallsignList(progArgs, charList):
 
     # This function gets callsigns from my LOTW log. This is done to
     # get some foreign callsigns for the training.
-    lotwLst = getLOTWLogCallsigns()
+    # lotwLst = getLOTWLogCallsigns()
 
+    # This function generates a list of US style callsigns
+    usLst = generateUSCallsigns()
+    # print(f"DEBUG: {usLst}")
+    print(f"DEBUG: usLst len: {len(usLst)}")
+
+    print
+    # usLst = removeDuplicates(usLst)
+    # print(f"DEBUG: {usLst}")
+    # print(f"DEBUG: usLst len: {len(usLst)}")
+
+    # temporarily return empty list for foreign list
+    return usLst, []       
+
+'''
     # remove all US callsigns from this list to get just the foreign
     # callsigns
     foreignLst = removeUSCallsigns(lotwLst)
@@ -231,7 +318,8 @@ def getCallsignList(progArgs, charList):
     fccLst = tmpLst
 
     return fccLst, foreignLst
-            
+'''            
+
     
 
 def getWordList(progArgs, charList):
