@@ -13,8 +13,8 @@ import subprocess
 import sys
 import time
 
-from db import *
-from qrz import *
+# from db import *
+# from qrz import *
 
 
 
@@ -490,7 +490,11 @@ def displayGeneratedText(progArgs, wordLst):
     columns = int(columns)         # convert to an integer
     # print(f"displayGeneratedText() rows {rows}, columns {columns} type {type(columns)}")
 
-    print("\nWords Generated:")
+    if progArgs['words']:
+        print("\nWords Generated:")
+    else:
+        print("\nCallsigns Generated:")
+        
     print("---------------------------------------------------------")
     numChars = 0
     # for word in removeDuplicates(wordLst):
@@ -505,14 +509,21 @@ def displayGeneratedText(progArgs, wordLst):
         if word == 'vvvv':
             pass
         else:
-            numChars += len(word) + 1
+            if progArgs['words']:
+                numChars += len(word) + 1
+            else:
+                numChars += 6 + 1
+                
             numNextChars = numChars + len(rwordLst[index])
                                  
             if numNextChars >= columns:       # print a newline if more chars than
                 endChar = '\n'                # terminal width
                 numChars = 0
-                
-            print(f"{word}", end=endChar)
+
+            if progArgs['words']:
+                print(f"{word}", end=endChar)
+            else:
+                print(f"{word:6s}", end=endChar)
 
     print("")
     print("---------------------------------------------------------")
