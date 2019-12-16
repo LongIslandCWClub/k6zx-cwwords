@@ -14,7 +14,7 @@ QRZ_USERNAME   = 'K6ZX'
 QRZ_PASSWORD   = 'Sean!12233'
 
 FOREIGN_CALL_FILE = os.path.join(os.environ['HOME'],
-                                 'devel/python/cwwords/database/foreign.dat')
+                                 'local/deploy/cwwords/database/foreign.dat')
 
 
 def getCalldata(qrz, call):
