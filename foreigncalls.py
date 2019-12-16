@@ -5,6 +5,7 @@
 import os
 import string
 import sys
+import time
 
 from qrz import *
 
@@ -33,6 +34,8 @@ def getCalldata(qrz, call):
     except AttributeError:
         pass
 
+    time.sleep(4)      # slow the QRZ query rate down
+    
     return result
         
 
