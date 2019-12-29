@@ -53,6 +53,7 @@ class QRZ:
         url = self.QRZ_BASE_URL + f'?s={self._session_key}&callsign={callsign}'
 
         r = self._session.get(url)
+        # print(f"DEBUG qrz.callsignData(): {r}")
 
         if r.status_code != 200:
             raise Exception("Error Querying: Response code {}".\
@@ -62,6 +63,8 @@ class QRZ:
         if not raw:
             raise QRZerror('Unexpected API Result')
 
+        # print(f"DEBUG qrz.callsignData(): {raw}")
+        
         if raw['Session'].get('Error'):
             errormsg = raw['Session'].get('Error')
             if 'Session Timeout' in errormsg or 'Invalid session key' in errormsg:

@@ -2,7 +2,9 @@
 # -*- mode: python -*-
 
 
+
 import os
+import re
 import string
 import sys
 import time
@@ -16,26 +18,64 @@ QRZ_PASSWORD   = 'Sean!12233'
 FOREIGN_CALL_FILE = os.path.join(os.environ['HOME'],
                                  'local/deploy/cwwords/database/foreign.dat')
 
+NUM_DOTS = 0
 
-def getCalldata(qrz, call):
+
+def getCalldata(call):
+    global NUM_DOTS
+    
     result = "notfound"
     
-    try:
-        c = qrz.callsignData(call, verbose=False)
-        if c['country'] == 'United States':
-            pass
-        else:
-            result = (f"{c['call']}|{c['fname']}|{c['name']}|{c['addr1']}|"
-                      f"{c['addr2']}|{c['country']}")
-    except CallsignNotFound:
-        pass
-    except KeyError:
-        pass
-    except AttributeError:
-        pass
-
-    time.sleep(4)      # slow the QRZ query rate down
+    if re.search('.*[0-9]+.*', call):
+        # callsigns need at least one number
+        # so check for that
     
+        while True:
+            try:
+                qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
+                c = qrz.callsignData(call, verbose=False)
+                # print(f"DEBUG callsignData(): {c}")
+                if c['country'] != 'United States':
+                    result = (f"{c['call']}|{c['fname']}|{c['name']}|{c['addr1']}|"
+                              f"{c['addr2']}|{c['country']}|{call}")
+                    break
+                else:
+                    break
+            except CallsignNotFound as e:
+                # print(f"getCalldata() {e}")
+                break
+            except KeyError:
+                break
+            except AttributeError:
+                break
+            except Exception as e:
+                # print("", end="\r")               # carriage return
+                # sys.stdout.write("\033[K")        # clear to EOL
+                # NUM_DOTS = 0
+                print(f"\nWARNING: {e}")
+                time.sleep(60)
+
+        time.sleep(1)      # slow the QRZ query rate down
+                
+    columns, rows = os.get_terminal_size(0)
+    columns -= 5
+    if result == "notfound":
+        if NUM_DOTS >= columns:
+            # goto beginning of line and clear it
+            print("", end="\r")               # carriage return
+            sys.stdout.write("\033[K")        # clear to EOL
+            NUM_DOTS = 0
+        else:
+            print('.', end="", flush=True)
+            NUM_DOTS += 1
+    else:
+        # a callsign was found so clear to EOL so that the data can be
+        # printed (by another function)
+        if NUM_DOTS > 0:
+            print("", end="\r")
+            sys.stdout.write("\033[K")
+            NUM_DOTS = 0
+            
     return result
         
 
@@ -44,16 +84,21 @@ def getStartingCallsign():
     callsign = ""
 
     if os.path.exists(FOREIGN_CALL_FILE):
+        # print(f"getStartingCallsign(): file {FOREIGN_CALL_FILE} exists")
         with open(FOREIGN_CALL_FILE, 'r') as fileobj:
             for line in fileobj:
-                call = line.split("|")[0]
+                l = line.strip()
+                call = l.split("|")[0]
+                # print(f"    {call}")
+
+            # print(f"getStartingCallsign(): {call}")
 
         callsign = call
         
     return callsign
 
 
-def generateCallsigns(qrz, startCall):
+def generateCallsigns(startCall):
     print(f"generateCallsigns() call: {startCall}")
 
     aStr = string.ascii_uppercase + string.digits
@@ -109,7 +154,7 @@ def generateCallsigns(qrz, startCall):
 
             print(f"debug: fStr {fStr}")
             
-    with open(FOREIGN_CALL_FILE, 'w') as fileobj:
+    with open(FOREIGN_CALL_FILE, 'a') as fileobj:
         if restartCallLen <= 4:
             # generate 4 character callsigns
             print("Getting 4 character callsigns")
@@ -118,11 +163,13 @@ def generateCallsigns(qrz, startCall):
                     for c in cStr:
                         for d in dStr:
                             call = f"{a}{b}{c}{d}"
-                            callData = getCalldata(qrz, call)
+                            callData = getCalldata(call)
 
-                            if callData != "notfound":
+                            if not re.search("notfound", callData):
                                 print(f"{callData}")
                                 fileobj.write(f"{callData}\n")
+                                fileobj.flush()
+                                os.sync()
 
             # generate 5 character callsigns
             print("Getting 5 character callsigns")
@@ -132,11 +179,13 @@ def generateCallsigns(qrz, startCall):
                         for d in string.ascii_uppercase + string.digits:
                             for e in string.ascii_uppercase + string.digits:
                                 call = f"{a}{b}{c}{d}{e}"
-                                callData = getCalldata(qrz, call)
+                                callData = getCalldata(call)
 
-                                if callData != "notfound":
+                                if not re.search("notfound", callData):
                                     print(f"{callData}")
                                     fileobj.write(f"{callData}\n")
+                                    fileobj.flush()
+                                    os.sync()
 
             # generate 6 character callsigns
             print("Getting 6 character callsigns")
@@ -147,20 +196,24 @@ def generateCallsigns(qrz, startCall):
                             for e in string.ascii_uppercase + string.digits:
                                 for f in string.ascii_uppercase + string.digits:
                                     call = f"{a}{b}{c}{d}{e}{f}"
-                                    callData = getCalldata(qrz, call)
+                                    callData = getCalldata(call)
 
-                                    if callData != "notfound":
+                                    if not re.search("notfound", callData):
                                         print(f"{callData}")
                                         fileobj.write(f"{callData}\n")
+                                        fileobj.flush()
+                                        os.sync()
 
                                         
 
 def main():
-    qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
+    # qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
 
     startingCall = getStartingCallsign()
+    print(f"starting callsign: {startingCall}")
 
-    generateCallsigns(qrz, startingCall)
+    # generateCallsigns(qrz, startingCall)
+    generateCallsigns(startingCall)
 
     
 
