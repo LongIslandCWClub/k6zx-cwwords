@@ -8,12 +8,13 @@ import inspect
 import os
 import random
 import re
+import string
 import subprocess
 import sys
 import time
 
-from db import *
-from qrz import *
+# from db import *
+# from qrz import *
 
 
 
@@ -102,8 +103,10 @@ def parseArguments():
                         type=int, default=600, help='Sidetone frequency (Hz)')
     parser.add_argument('--word-file', action='store', dest='wordFile',
                         help='Word file path')
-    parser.add_argument('--call-file', action='store', dest='callsignFile',
-                        help='Callsign file path')
+    parser.add_argument('--us-call-file', action='store', dest='usCallsignFile',
+                        help='US callsign file path')
+    parser.add_argument('--foreign-call-file', action='store', dest='foreignCallsignFile',
+                        help='Foreign callsign file path')
     # parser.add_argument('--common-file', action='store', dest='commonFile',
     #                     help='Common words file path')
 
@@ -155,6 +158,106 @@ def getLOTWLogCallsigns():
 
     return calllst
 
+def getUSCallsigns(args):
+    callLst = []
+
+    with open(args['usCallsignFile'], 'r') as fileobj:
+        for line in fileobj:
+            elem = {}
+            call = line.split('|')
+            fileType = call[0]
+            callsign = call[4]
+            fullName = call[7]
+            firstName = call[8]
+            street = call[15]
+            city = call[16]
+            state = call[17]
+            
+            elem['fileType'] = fileType
+            elem['callsign'] = callsign
+            elem['fullName'] = fullName
+            elem['firstName'] = firstName
+            elem['street'] = street
+            elem['city'] = city
+            elem['state'] = state
+
+            callLst.append(elem)
+    
+    return callLst
+
+
+
+# def generateUSCallsigns():
+#     callLst = []
+
+#     # Extra class; K, N, W; two letter suffix
+#     for a in ['K', 'N', 'W']:
+#         for b in string.digits:
+#             for c in string.ascii_uppercase:
+#                 for d in string.ascii_uppercase:
+#                     call = f"{a}{b}{c}{d}"
+#                     callLst.append(call)
+
+#     # Extra class; A, K, N, W; 1 letter suffix
+#     for a in ['A', 'K', 'N', 'W']:
+#         for b in string.ascii_uppercase:
+#             for c in string.digits:
+#                 for d in string.ascii_uppercase:
+#                     call = f"{a}{b}{c}{d}"
+#                     callLst.append(call)
+#                     callLst += callLst
+
+#     # Extra class; AL, KL, NL, WL; 1 letter suffix
+#     for a in ['AL', 'KL', 'NL', 'WL']:
+#         for c in string.digits:
+#             for d in string.ascii_uppercase:
+#                 call = f"{a}{c}{d}"
+#                 callLst.append(call)
+#                 callLst += callLst
+
+#     # Extra class; KP, NP, WP; 1 letter suffix
+#     for a in ['KP', 'NP', 'WP']:
+#         for c in string.digits[1:6]:
+#             for d in string.ascii_uppercase:
+#                 call = f"{a}{c}{d}"
+#                 callLst.append(call)
+#                 callLst += callLst
+
+#     # Extra class; AH, KH, NH, WH; 1 letter suffix
+#     for a in ['AH', 'KH', 'NH', 'WH']:
+#         for c in string.digits[1:6]:
+#             for d in string.ascii_uppercase:
+#                 call = f"{a}{c}{d}"
+#                 callLst.append(call)
+#                 callLst += callLst
+
+#     # Advanced class; K, N, W; 2 letter prefix, 2 letter suffix
+#     for a in ['K', 'N', 'W']:
+#         for b in string.ascii_uppercase:
+#             for c in string.digits:
+#                 for d in string.ascii_uppercase:
+#                     for e in string.ascii_uppercase:
+#                         call = f"{a}{b}{c}{d}{e}"
+#                         callLst.append(call)
+#                         callLst += callLst
+                        
+#     # General/Technician class; K, N, W; 2 letter prefix, 3 letter suffix
+#     for a in ['K', 'N', 'W']:
+#         for b in string.ascii_uppercase:
+#             for c in string.digits:
+#                 for d in string.ascii_uppercase:
+#                     for e in string.ascii_uppercase:
+#                         for f in string.ascii_uppercase:
+#                             call = f"{a}{b}{c}{d}{e}{f}"
+#                             callLst.append(call)
+#                             callLst += callLst
+                            
+    
+#     # Extra class, two letter prefix, A, N, K, W
+
+
+#     return callLst
+
 
 def removeUSCallsigns(lst):
     resultLst = []
@@ -174,9 +277,9 @@ def removeUSCallsigns(lst):
             pass
         else:
             resultLst.append(call)
-    
+            
     return resultLst
-    
+
 
 def getFCCCallsignList(progArgs):
     callLst = []
@@ -193,10 +296,32 @@ def getFCCCallsignList(progArgs):
 def getCallsignList(progArgs, charList):
     tmpLst = []
 
-    # This function gets callsigns from my LOTW log. This is done to
-    # get some foreign callsigns for the training.
-    lotwLst = getLOTWLogCallsigns()
+    usDataLst = getUSCallsigns(progArgs)
+    usLst = []
+    for x in usDataLst:
+        usLst.append(x['callsign'])
 
+    # print(f"DEBUG: {usLst}")
+    print(f"Number of US callsigns: {len(usLst)}")
+
+    # Remove callsigns that contain characters not in the character list
+    tmpLst = []
+    for call in usLst:
+        for c in call:
+            cl = c.lower()
+            if cl not in charList:
+                break
+            else:
+                pass
+        else:
+            tmpLst.append(call)
+
+    usLst = tmpLst
+    
+    # temporarily return empty list for foreign list
+    return usLst, []       
+
+'''
     # remove all US callsigns from this list to get just the foreign
     # callsigns
     foreignLst = removeUSCallsigns(lotwLst)
@@ -232,7 +357,8 @@ def getCallsignList(progArgs, charList):
     fccLst = tmpLst
 
     return fccLst, foreignLst
-            
+'''            
+
     
 
 def getWordList(progArgs, charList):
@@ -252,17 +378,24 @@ def getWordList(progArgs, charList):
             lst = line.split('-')
             # print(f"lst: {lst}")
 
-            word = lst[0]
+            word = lst[0].strip()
+            word = word.lower()
 
             for c in word:
-                if (c not in charList) and (c.lower() not in charList):
+                # if (c not in charList) and (c.lower() not in charList):
+                if c not in charList:
+                    # print(f"c: {c}, word: {word}")
                     break
                 else:
                     pass
             else:
-                # print(f"word: {word}")
+                # print(f"append: {word}")
                 wordLst.append(word)
 
+    # debug
+    # print(wordLst)
+    # sys.exit(0)
+    
     return wordLst
 
 
@@ -365,7 +498,11 @@ def displayGeneratedText(progArgs, wordLst):
     columns = int(columns)         # convert to an integer
     # print(f"displayGeneratedText() rows {rows}, columns {columns} type {type(columns)}")
 
-    print("\nWords Generated:")
+    if progArgs['words']:
+        print("\nWords Generated:")
+    else:
+        print("\nCallsigns Generated:")
+        
     print("---------------------------------------------------------")
     numChars = 0
     # for word in removeDuplicates(wordLst):
@@ -380,14 +517,21 @@ def displayGeneratedText(progArgs, wordLst):
         if word == 'vvvv':
             pass
         else:
-            numChars += len(word) + 1
+            if progArgs['words']:
+                numChars += len(word) + 1
+            else:
+                numChars += 6 + 1
+                
             numNextChars = numChars + len(rwordLst[index])
                                  
             if numNextChars >= columns:       # print a newline if more chars than
                 endChar = '\n'                # terminal width
                 numChars = 0
-                
-            print(f"{word}", end=endChar)
+
+            if progArgs['words']:
+                print(f"{word}", end=endChar)
+            else:
+                print(f"{word:6s}", end=endChar)
 
     print("")
     print("---------------------------------------------------------")
@@ -403,18 +547,18 @@ def displayGeneratedText(progArgs, wordLst):
 
 def generateCallsigns(progArgs, charList):
     print('Generating callsigns...')
-    fccLst, foreignLst = getCallsignList(progArgs, charList)
-    # print(f"num FCC calls: {len(fccLst)}, "
+    usLst, foreignLst = getCallsignList(progArgs, charList)
+    # print(f"num FCC calls: {len(usLst)}, "
     #       f"num foreign calls: {len(foreignLst)}")
 
     rnum = random.randint(60, 101) / 100
     fccnum = int(round(progArgs['totalWords'] * rnum))
     fornum = progArgs['totalWords'] - fccnum
-    print(f"fcc calls: {fccnum}, foreign calls: {fornum}")
+    print(f"US calls: {fccnum}, foreign calls: {fornum}")
 
-    if fccLst:
-        random.shuffle(fccLst)
-        trunFccLst = fccLst[:progArgs['totalWords']]
+    if usLst:
+        random.shuffle(usLst)
+        trunFccLst = usLst[:progArgs['totalWords']]
 
         if foreignLst:
             trunFccLst = trunFccLst[:fccnum]
@@ -646,12 +790,14 @@ def main():
     progArgs['qsos'] = args.qsos
     if args.wordFile:
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
-    if args.callsignFile:
-        progArgs['callsignFile'] = os.path.abspath(args.callsignFile)
+    if args.usCallsignFile:
+        progArgs['usCallsignFile'] = os.path.abspath(args.usCallsignFile)
+    if args.foreignCallsignFile:
+        progArgs['foreignCallsignFile'] = os.path.abspath(args.foreignCallsignFile)
     # if args.commonFile:
     #     progArgs['commonFile'] = os.path.abspath(args.commonFile)
         
-    # print(f"args: {progArgs}")
+    print(f"args: {progArgs}")
 
     if progArgs['numKochChars'] is not None:
         charList = getKochChars(progArgs['numKochChars'])
