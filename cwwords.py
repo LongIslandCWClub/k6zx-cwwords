@@ -37,6 +37,7 @@ EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
 EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
 
 MY_CALLSIGN = "K6ZX"
+MY_SKCC_NUM = 18552
 
 QRZ_USERNAME   = 'K6ZX'
 QRZ_PASSWORD   = 'Sean!12233'
@@ -485,6 +486,10 @@ def generateWords(progArgs, charList):
         print("and/or increase number of characters in set.")
 
 
+def generateSkccNum():
+    rnum = random.randint(1, 25000)
+    return rnum
+    
 def generateQSOs(progArgs, charList):
     print('Generating QSOs...')
     callLst = getLOTWLogCallsigns()
@@ -500,6 +505,9 @@ def generateQSOs(progArgs, charList):
     else:
         dxStation = MY_CALLSIGN
         deStation = callLst[0]
+
+    dxCall = f"{dxStation} DE {deStation}"
+    deCall = f"{deStation} DE {dxStation}"
 
     qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
     dxCallData = qrz.callsignData(dxStation, verbose=False)
@@ -518,13 +526,20 @@ def generateQSOs(progArgs, charList):
     else:
         deLoc = deCallData['country']
 
+    if deStation == MY_CALLSIGN:
+        deSKCCNum = MY_SKCC_NUM
+        dxSKCCNum = generateSkccNum()
+    else:
+        deSKCCNum = generateSkccNum()
+        dxSKCCNum = MY_SKCC_NUM
+
     now = datetime.datetime.now()
     if 3 <= now.hour < 12:
-        greeting = "GM"
+        salutation = "GM"
     elif 12 <= now.hour < 20:
-        greeting = "GE"
+        salutation = "GE"
     else:
-        greeting = "GN"
+        salutation = "GN"
 
     deRead = random.randint(1, 5)
     deStrgth = random.randint(1, 9)
@@ -535,6 +550,8 @@ def generateQSOs(progArgs, charList):
 
     qsoLst = ['vvvv']
     qsoLine = []
+
+    print(f"DEBUG qsoline: {progArgs['qsoLine']}")
     if progArgs['qsoLine'] == None:
         qsoLine = [1, 2, 3, 4, 5, 6]
     else:
@@ -546,39 +563,46 @@ def generateQSOs(progArgs, charList):
 
     # use a random number to decide on number of CQs
     if 1 in qsoLine:
-        if dxTone > 2:
+        if dxRead < 2:
             qsoLst.append(f"CQ CQ CQ DE {deStation} {deStation} {deStation} K")
+
         else:
             qsoLst.append(f"CQ CQ DE {deStation} {deStation} K")
 
     #    if qsoLine == MAX_QSO_LINES or qsoLine == 2:
     if 2 in qsoLine:
-        if dxTone > 5:
-            qsoLst.append(f"{deStation} {deStation} {deStation} DE "
-                          f"{dxStation} {dxStation} {dxStation} <AR>")
-        else:
+        if dxRead < 2:
             qsoLst.append(f"{deStation} {deStation} DE "
+                          f"{dxStation} {dxStation} <AR>")
+        else:
+            qsoLst.append(f"{deStation} DE "
                           f"{dxStation} {dxStation} <AR>")
             
     if 3 in qsoLine:
-        qsoLst.append(f"{dxStation} DE {deStation} R {greeting} OM ES TNX FER CALL <BT> "
-                      f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
-                      f"QTH HR {deCity} {deLoc} {deCity} {deLoc} <BT> "
-                      f"NAME ES {deOP} {deOP} HW? {dxStation} DE {deStation} K")
+        call      = f"{dxStation} DE {deStation}"
+        greeting  = f"TNX FER CALL <BT>"
+        signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+        qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
+        nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
+        qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
 
     if 4 in qsoLine:
-        qsoLst.append(f"{deStation} DE {dxStation} <BT> {greeting} {dxOP} TNX FER RPRT "
-                      f"<BT>"
-                      f"UR RST {deRead}{deStrgth}{deTone} {deRead}{deStrgth}{deTone} <BT> "
-                      f"QTH {dxCity} {dxLoc} {dxCity} {dxLoc} <BT> "
-                      f"{deStation} DE {dxStation} K")
+        call      = f"{deStation} DE {dxStation}"
+        greeting  = f"R R {salutation} ES TNX FER CALL <BT>"
+        signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+        qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
+        nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
+        qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
 
     if 5 in qsoLine:
-        qsoLst.append(f"{dxStation} DE {deStation} <BT> OM TNX FER INFO ES QSO <BT> "
-                      f"{dxStation} DE {deStation} 73 ES HPE CU AGN <SK> TU i")
+        call      = f"{dxStation} DE {deStation}"
+        greeting  = f"TNX FER FB QSO {dxOP} <BT> HP CU AGN 73 <SK>"
+        qsoLst.append(f"{greeting} {call} i")
 
     if 6 in qsoLine:
-        qsoLst.append(f"{deStation} DE {dxStation} <BT> TNX QSO OM 73 {greeting} SK TU i")
+        call      = f"{deStation} DE {dxStation}"
+        greeting  = f"TNX FER QSO {deOP} <BT> 73 <SK>"
+        qsoLst.append(f"{greeting} DE {call} i")
 
     # print(f"DEBUG  qsoLst: {qsoLst}")
 
