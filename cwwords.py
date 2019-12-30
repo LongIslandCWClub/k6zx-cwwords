@@ -186,111 +186,49 @@ def getUSCallsigns(args):
     return callLst
 
 
-
-# def generateUSCallsigns():
-#     callLst = []
-
-#     # Extra class; K, N, W; two letter suffix
-#     for a in ['K', 'N', 'W']:
-#         for b in string.digits:
-#             for c in string.ascii_uppercase:
-#                 for d in string.ascii_uppercase:
-#                     call = f"{a}{b}{c}{d}"
-#                     callLst.append(call)
-
-#     # Extra class; A, K, N, W; 1 letter suffix
-#     for a in ['A', 'K', 'N', 'W']:
-#         for b in string.ascii_uppercase:
-#             for c in string.digits:
-#                 for d in string.ascii_uppercase:
-#                     call = f"{a}{b}{c}{d}"
-#                     callLst.append(call)
-#                     callLst += callLst
-
-#     # Extra class; AL, KL, NL, WL; 1 letter suffix
-#     for a in ['AL', 'KL', 'NL', 'WL']:
-#         for c in string.digits:
-#             for d in string.ascii_uppercase:
-#                 call = f"{a}{c}{d}"
-#                 callLst.append(call)
-#                 callLst += callLst
-
-#     # Extra class; KP, NP, WP; 1 letter suffix
-#     for a in ['KP', 'NP', 'WP']:
-#         for c in string.digits[1:6]:
-#             for d in string.ascii_uppercase:
-#                 call = f"{a}{c}{d}"
-#                 callLst.append(call)
-#                 callLst += callLst
-
-#     # Extra class; AH, KH, NH, WH; 1 letter suffix
-#     for a in ['AH', 'KH', 'NH', 'WH']:
-#         for c in string.digits[1:6]:
-#             for d in string.ascii_uppercase:
-#                 call = f"{a}{c}{d}"
-#                 callLst.append(call)
-#                 callLst += callLst
-
-#     # Advanced class; K, N, W; 2 letter prefix, 2 letter suffix
-#     for a in ['K', 'N', 'W']:
-#         for b in string.ascii_uppercase:
-#             for c in string.digits:
-#                 for d in string.ascii_uppercase:
-#                     for e in string.ascii_uppercase:
-#                         call = f"{a}{b}{c}{d}{e}"
-#                         callLst.append(call)
-#                         callLst += callLst
-                        
-#     # General/Technician class; K, N, W; 2 letter prefix, 3 letter suffix
-#     for a in ['K', 'N', 'W']:
-#         for b in string.ascii_uppercase:
-#             for c in string.digits:
-#                 for d in string.ascii_uppercase:
-#                     for e in string.ascii_uppercase:
-#                         for f in string.ascii_uppercase:
-#                             call = f"{a}{b}{c}{d}{e}{f}"
-#                             callLst.append(call)
-#                             callLst += callLst
-                            
-    
-#     # Extra class, two letter prefix, A, N, K, W
-
-
-#     return callLst
-
-
-def removeUSCallsigns(lst):
-    resultLst = []
-
-    # All US amateur radio callsigns contain one or two prefix letters
-    # beginning with K, N, W, AA-AL, KA-KZ, NA-NZ, or WA-WZ.
-    for call in lst:
-        if re.search('^[KNW][0-9]', call):
-            pass
-        elif re.search('^A[A-L][0-9]', call):
-            pass
-        elif re.search('^K[A-Z][0-9]', call):
-            pass
-        elif re.search('^N[A-Z][0-9]', call):
-            pass
-        elif re.search('^W[A-Z][0-9]', call):
-            pass
-        else:
-            resultLst.append(call)
-            
-    return resultLst
-
-
-def getFCCCallsignList(progArgs):
+def getForeignCallsigns(args):
     callLst = []
 
-    done = False
-    with open(progArgs['callsignFile'], 'r') as fileobj:
+    with open(args['foreignCallsignFile'], 'r') as fileobj:
         for line in fileobj:
-            call = line.strip()
-            callLst.append(call)
+            # print(f"line : {line}")
+            elem = {}
+            call = line.split('|')
+            callsign = call[0]
+            firstName = call[1]
+            fullName = call[2]
+            street = call[3]
+            city = call[4]
+            country = call[5]
+
+            elem['callsign'] = callsign
+            elem['firstName'] = firstName
+            elem['fullName'] = fullName
+            elem['street'] = street
+            elem['city'] = city
+            elem['country'] = country
+            # print(f"DEBUG: {elem}")
+            
+            callLst.append(elem)
 
     return callLst
+            
+    
+def filterCallsigns(charList, calllst):
+    # Remove callsigns that contain characters not in the character list
+    tmpLst = []
+    for call in calllst:
+        for c in call:
+            cl = c.lower()
+            if cl not in charList:
+                break
+            else:
+                pass
+        else:
+            tmpLst.append(call)
+
+    return tmpLst
+
 
 
 def getCallsignList(progArgs, charList):
@@ -304,62 +242,21 @@ def getCallsignList(progArgs, charList):
     # print(f"DEBUG: {usLst}")
     print(f"Number of US callsigns: {len(usLst)}")
 
-    # Remove callsigns that contain characters not in the character list
-    tmpLst = []
-    for call in usLst:
-        for c in call:
-            cl = c.lower()
-            if cl not in charList:
-                break
-            else:
-                pass
-        else:
-            tmpLst.append(call)
+    usLst = filterCallsigns(charList, usLst)
+    
+    foreignDataLst = getForeignCallsigns(progArgs)
+    foreignLst = []
+    for x in foreignDataLst:
+        foreignLst.append(x['callsign'])
+        
+    # print(f"DEBUG: {foreignDataLst}")
+    print(f"Number of foreign callsigns: {len(foreignLst)}")
 
-    usLst = tmpLst
+    foreignLst = filterCallsigns(charList, foreignLst)
     
     # temporarily return empty list for foreign list
-    return usLst, []       
+    return usLst, foreignLst
 
-'''
-    # remove all US callsigns from this list to get just the foreign
-    # callsigns
-    foreignLst = removeUSCallsigns(lotwLst)
-
-    for call in foreignLst:
-        for c in call:
-            cl = c.lower()
-            if cl not in charList:
-                break
-            else:
-                pass
-        else:
-            tmpLst.append(call)
-
-    foreignLst = tmpLst
-
-    # This function gets callsigns from FCC datafile stored in a
-    # subdirectory. This has many many callsigns but they are all US
-    # callsigns.
-    fccLst = getFCCCallsignList(progArgs)
-
-    tmpLst = []
-    for call in fccLst:
-        for c in call:
-            cl = c.lower()
-            if cl not in charList:
-                break
-            else:
-                pass
-        else:
-            tmpLst.append(call)
-
-    fccLst = tmpLst
-
-    return fccLst, foreignLst
-'''            
-
-    
 
 def getWordList(progArgs, charList):
     wordLst = []
