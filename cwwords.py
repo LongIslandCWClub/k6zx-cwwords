@@ -38,6 +38,7 @@ EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
 EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
 
 MY_CALLSIGN = "K6ZX"
+MY_SKCC_NUM = 18552
 
 QRZ_USERNAME   = 'K6ZX'
 QRZ_PASSWORD   = 'Sean!12233'
@@ -185,111 +186,49 @@ def getUSCallsigns(args):
     return callLst
 
 
-
-# def generateUSCallsigns():
-#     callLst = []
-
-#     # Extra class; K, N, W; two letter suffix
-#     for a in ['K', 'N', 'W']:
-#         for b in string.digits:
-#             for c in string.ascii_uppercase:
-#                 for d in string.ascii_uppercase:
-#                     call = f"{a}{b}{c}{d}"
-#                     callLst.append(call)
-
-#     # Extra class; A, K, N, W; 1 letter suffix
-#     for a in ['A', 'K', 'N', 'W']:
-#         for b in string.ascii_uppercase:
-#             for c in string.digits:
-#                 for d in string.ascii_uppercase:
-#                     call = f"{a}{b}{c}{d}"
-#                     callLst.append(call)
-#                     callLst += callLst
-
-#     # Extra class; AL, KL, NL, WL; 1 letter suffix
-#     for a in ['AL', 'KL', 'NL', 'WL']:
-#         for c in string.digits:
-#             for d in string.ascii_uppercase:
-#                 call = f"{a}{c}{d}"
-#                 callLst.append(call)
-#                 callLst += callLst
-
-#     # Extra class; KP, NP, WP; 1 letter suffix
-#     for a in ['KP', 'NP', 'WP']:
-#         for c in string.digits[1:6]:
-#             for d in string.ascii_uppercase:
-#                 call = f"{a}{c}{d}"
-#                 callLst.append(call)
-#                 callLst += callLst
-
-#     # Extra class; AH, KH, NH, WH; 1 letter suffix
-#     for a in ['AH', 'KH', 'NH', 'WH']:
-#         for c in string.digits[1:6]:
-#             for d in string.ascii_uppercase:
-#                 call = f"{a}{c}{d}"
-#                 callLst.append(call)
-#                 callLst += callLst
-
-#     # Advanced class; K, N, W; 2 letter prefix, 2 letter suffix
-#     for a in ['K', 'N', 'W']:
-#         for b in string.ascii_uppercase:
-#             for c in string.digits:
-#                 for d in string.ascii_uppercase:
-#                     for e in string.ascii_uppercase:
-#                         call = f"{a}{b}{c}{d}{e}"
-#                         callLst.append(call)
-#                         callLst += callLst
-                        
-#     # General/Technician class; K, N, W; 2 letter prefix, 3 letter suffix
-#     for a in ['K', 'N', 'W']:
-#         for b in string.ascii_uppercase:
-#             for c in string.digits:
-#                 for d in string.ascii_uppercase:
-#                     for e in string.ascii_uppercase:
-#                         for f in string.ascii_uppercase:
-#                             call = f"{a}{b}{c}{d}{e}{f}"
-#                             callLst.append(call)
-#                             callLst += callLst
-                            
-    
-#     # Extra class, two letter prefix, A, N, K, W
-
-
-#     return callLst
-
-
-def removeUSCallsigns(lst):
-    resultLst = []
-
-    # All US amateur radio callsigns contain one or two prefix letters
-    # beginning with K, N, W, AA-AL, KA-KZ, NA-NZ, or WA-WZ.
-    for call in lst:
-        if re.search('^[KNW][0-9]', call):
-            pass
-        elif re.search('^A[A-L][0-9]', call):
-            pass
-        elif re.search('^K[A-Z][0-9]', call):
-            pass
-        elif re.search('^N[A-Z][0-9]', call):
-            pass
-        elif re.search('^W[A-Z][0-9]', call):
-            pass
-        else:
-            resultLst.append(call)
-            
-    return resultLst
-
-
-def getFCCCallsignList(progArgs):
+def getForeignCallsigns(args):
     callLst = []
 
-    done = False
-    with open(progArgs['callsignFile'], 'r') as fileobj:
+    with open(args['foreignCallsignFile'], 'r') as fileobj:
         for line in fileobj:
-            call = line.strip()
-            callLst.append(call)
+            # print(f"line : {line}")
+            elem = {}
+            call = line.split('|')
+            callsign = call[0]
+            firstName = call[1]
+            fullName = call[2]
+            street = call[3]
+            city = call[4]
+            country = call[5]
+
+            elem['callsign'] = callsign
+            elem['firstName'] = firstName
+            elem['fullName'] = fullName
+            elem['street'] = street
+            elem['city'] = city
+            elem['country'] = country
+            # print(f"DEBUG: {elem}")
+            
+            callLst.append(elem)
 
     return callLst
+            
+    
+def filterCallsigns(charList, calllst):
+    # Remove callsigns that contain characters not in the character list
+    tmpLst = []
+    for call in calllst:
+        for c in call:
+            cl = c.lower()
+            if cl not in charList:
+                break
+            else:
+                pass
+        else:
+            tmpLst.append(call)
+
+    return tmpLst
+
 
 
 def getCallsignList(progArgs, charList):
@@ -303,62 +242,21 @@ def getCallsignList(progArgs, charList):
     # print(f"DEBUG: {usLst}")
     print(f"Number of US callsigns: {len(usLst)}")
 
-    # Remove callsigns that contain characters not in the character list
-    tmpLst = []
-    for call in usLst:
-        for c in call:
-            cl = c.lower()
-            if cl not in charList:
-                break
-            else:
-                pass
-        else:
-            tmpLst.append(call)
+    usLst = filterCallsigns(charList, usLst)
+    
+    foreignDataLst = getForeignCallsigns(progArgs)
+    foreignLst = []
+    for x in foreignDataLst:
+        foreignLst.append(x['callsign'])
+        
+    # print(f"DEBUG: {foreignDataLst}")
+    print(f"Number of foreign callsigns: {len(foreignLst)}")
 
-    usLst = tmpLst
+    foreignLst = filterCallsigns(charList, foreignLst)
     
     # temporarily return empty list for foreign list
-    return usLst, []       
+    return usLst, foreignLst
 
-'''
-    # remove all US callsigns from this list to get just the foreign
-    # callsigns
-    foreignLst = removeUSCallsigns(lotwLst)
-
-    for call in foreignLst:
-        for c in call:
-            cl = c.lower()
-            if cl not in charList:
-                break
-            else:
-                pass
-        else:
-            tmpLst.append(call)
-
-    foreignLst = tmpLst
-
-    # This function gets callsigns from FCC datafile stored in a
-    # subdirectory. This has many many callsigns but they are all US
-    # callsigns.
-    fccLst = getFCCCallsignList(progArgs)
-
-    tmpLst = []
-    for call in fccLst:
-        for c in call:
-            cl = c.lower()
-            if cl not in charList:
-                break
-            else:
-                pass
-        else:
-            tmpLst.append(call)
-
-    fccLst = tmpLst
-
-    return fccLst, foreignLst
-'''            
-
-    
 
 def getWordList(progArgs, charList):
     wordLst = []
@@ -629,6 +527,10 @@ def generateWords(progArgs, charList):
         print("and/or increase number of characters in set.")
 
 
+def generateSkccNum():
+    rnum = random.randint(1, 25000)
+    return rnum
+    
 def generateQSOs(progArgs, charList):
     print('Generating QSOs...')
     callLst = getLOTWLogCallsigns()
@@ -644,6 +546,9 @@ def generateQSOs(progArgs, charList):
     else:
         dxStation = MY_CALLSIGN
         deStation = callLst[0]
+
+    dxCall = f"{dxStation} DE {deStation}"
+    deCall = f"{deStation} DE {dxStation}"
 
     qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
     dxCallData = qrz.callsignData(dxStation, verbose=False)
@@ -662,13 +567,20 @@ def generateQSOs(progArgs, charList):
     else:
         deLoc = deCallData['country']
 
+    if deStation == MY_CALLSIGN:
+        deSKCCNum = MY_SKCC_NUM
+        dxSKCCNum = generateSkccNum()
+    else:
+        deSKCCNum = generateSkccNum()
+        dxSKCCNum = MY_SKCC_NUM
+
     now = datetime.datetime.now()
     if 3 <= now.hour < 12:
-        greeting = "GM"
+        salutation = "GM"
     elif 12 <= now.hour < 20:
-        greeting = "GE"
+        salutation = "GE"
     else:
-        greeting = "GN"
+        salutation = "GN"
 
     deRead = random.randint(1, 5)
     deStrgth = random.randint(1, 9)
@@ -679,6 +591,8 @@ def generateQSOs(progArgs, charList):
 
     qsoLst = ['vvvv']
     qsoLine = []
+
+    print(f"DEBUG qsoline: {progArgs['qsoLine']}")
     if progArgs['qsoLine'] == None:
         qsoLine = [1, 2, 3, 4, 5, 6]
     else:
@@ -690,39 +604,46 @@ def generateQSOs(progArgs, charList):
 
     # use a random number to decide on number of CQs
     if 1 in qsoLine:
-        if dxTone > 2:
+        if dxRead < 2:
             qsoLst.append(f"CQ CQ CQ DE {deStation} {deStation} {deStation} K")
+
         else:
             qsoLst.append(f"CQ CQ DE {deStation} {deStation} K")
 
     #    if qsoLine == MAX_QSO_LINES or qsoLine == 2:
     if 2 in qsoLine:
-        if dxTone > 5:
-            qsoLst.append(f"{deStation} {deStation} {deStation} DE "
-                          f"{dxStation} {dxStation} {dxStation} <AR>")
-        else:
+        if dxRead < 2:
             qsoLst.append(f"{deStation} {deStation} DE "
+                          f"{dxStation} {dxStation} <AR>")
+        else:
+            qsoLst.append(f"{deStation} DE "
                           f"{dxStation} {dxStation} <AR>")
             
     if 3 in qsoLine:
-        qsoLst.append(f"{dxStation} DE {deStation} R {greeting} OM ES TNX FER CALL <BT> "
-                      f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
-                      f"QTH HR {deCity} {deLoc} {deCity} {deLoc} <BT> "
-                      f"NAME ES {deOP} {deOP} HW? {dxStation} DE {deStation} K")
+        call      = f"{dxStation} DE {deStation}"
+        greeting  = f"TNX FER CALL <BT>"
+        signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+        qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
+        nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
+        qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
 
     if 4 in qsoLine:
-        qsoLst.append(f"{deStation} DE {dxStation} <BT> {greeting} {dxOP} TNX FER RPRT "
-                      f"<BT>"
-                      f"UR RST {deRead}{deStrgth}{deTone} {deRead}{deStrgth}{deTone} <BT> "
-                      f"QTH {dxCity} {dxLoc} {dxCity} {dxLoc} <BT> "
-                      f"{deStation} DE {dxStation} K")
+        call      = f"{deStation} DE {dxStation}"
+        greeting  = f"R R {salutation} ES TNX FER CALL <BT>"
+        signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+        qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
+        nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
+        qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
 
     if 5 in qsoLine:
-        qsoLst.append(f"{dxStation} DE {deStation} <BT> OM TNX FER INFO ES QSO <BT> "
-                      f"{dxStation} DE {deStation} 73 ES HPE CU AGN <SK> TU i")
+        call      = f"{dxStation} DE {deStation}"
+        greeting  = f"TNX FER FB QSO {dxOP} <BT> HP CU AGN 73 <SK>"
+        qsoLst.append(f"{greeting} {call} i")
 
     if 6 in qsoLine:
-        qsoLst.append(f"{deStation} DE {dxStation} <BT> TNX QSO OM 73 {greeting} SK TU i")
+        call      = f"{deStation} DE {dxStation}"
+        greeting  = f"TNX FER QSO {deOP} <BT> 73 <SK>"
+        qsoLst.append(f"{greeting} DE {call} i")
 
     # print(f"DEBUG  qsoLst: {qsoLst}")
 
