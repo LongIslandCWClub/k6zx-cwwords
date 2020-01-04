@@ -193,13 +193,18 @@ def getForeignCallsigns(args):
         for line in fileobj:
             # print(f"line : {line}")
             elem = {}
-            call = line.split('|')
-            callsign = call[0]
-            firstName = call[1]
-            fullName = call[2]
-            street = call[3]
-            city = call[4]
-            country = call[5]
+            try:
+                call = line.split('|')
+                callsign = call[0]
+                firstName = call[1]
+                fullName = call[2]
+                street = call[3]
+                city = call[4]
+                country = call[5]
+            except IndexError as e:
+                print(f"line: {line}")
+                print(f"ERROR: {e}")
+                sys.exit(1)
 
             elem['callsign'] = callsign
             elem['firstName'] = firstName
