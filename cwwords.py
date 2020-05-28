@@ -699,7 +699,7 @@ def main():
     # if args.commonFile:
     #     progArgs['commonFile'] = os.path.abspath(args.commonFile)
         
-    print(f"args: {progArgs}")
+    # print(f"args: {progArgs}")
 
     if progArgs['numKochChars'] is not None:
         charList = getKochChars(progArgs['numKochChars'])
