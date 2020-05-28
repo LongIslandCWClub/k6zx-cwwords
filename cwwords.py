@@ -282,6 +282,7 @@ def getWordList(progArgs, charList):
 
             word = lst[0].strip()
             word = word.lower()
+            # print(f"word: {word}")
 
             for c in word:
                 # if (c not in charList) and (c.lower() not in charList):
@@ -513,8 +514,8 @@ def generateWords(progArgs, charList):
     if wordLst:
         random.shuffle(wordLst)
         trunWordLst = wordLst[:progArgs['totalWords']]
-        # print(f"\n\nwords: {trunWordLst}")
         # print(f"num words: {len(trunWordLst)}")
+        # print(f"\n\nwords: {trunWordLst}")
 
         if progArgs['play']:
             # Add 'vvvv' to beginning of list
