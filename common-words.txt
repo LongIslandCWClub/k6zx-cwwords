@@ -100,14 +100,14 @@
 # us
 # 33       - fondest regards
 # 55       - best success
-# 73       - best regards
+73       - best regards
 # 88       - love & kisses
 # A        - shorthand number 1
 # ABT      - about
-# AGN      - again
+AGN      - again
 # ANS      - answer
-# ANT      - antenna
-# B4       - before
+ANT      - antenna
+B4       - before
 # BC       - broadcast
 # BCNU     - be seeing you
 # BD       - bad
@@ -137,7 +137,7 @@
 # EL       - element
 # ENUF     - enough
 # ES       - and
-# FB       - fine business
+FB       - fine business
 # FD       - field day
 FER      - for
 # FIST     - unique characteristic of operator's sending
@@ -159,8 +159,8 @@ FER      - for
 # HC       - home call
 # HI       - laughter on CW
 # HNY      - happy new year
-# HPE      - hope
-# HR       - hear
+HPE      - hope
+HR       - hear
 # HV       - have
 # HVY      - heavy
 # HW       - how
@@ -197,7 +197,7 @@ HW?      - how copy?
 # RCVD     - received
 # RCVR     - receiver
 # RIG      - radio equipment
-# RPRT     - report
+RPRT     - report
 # RPT      - repeat or report
 RST
 # RX       - receiver
@@ -221,7 +221,7 @@ RST
 # TCVR     - transceiver
 # XCVR     - transceiver
 # TT       - that
-# TU       - thank you
+TU       - thank you
 # TX       - transmitter
 TNX      - thanks
 # U        - you
@@ -253,21 +253,21 @@ TNX      - thanks
 QRL      - are you busy?  | I am busy
 QRM      - are you being interfered with? | I am being interfered with
 QRN      - do you have static?  |  I have static
-QRO      - should I increase power?  |  increase power
+# QRO      - should I increase power?  |  increase power
 QRP      - should I decrease power?  |  decrease power  | low power operation
 QRS      - should I send more slowly?  |  send more slowly
 QRT      - should I stop transmitting?  | stop transmitting
-QRU      - have you anything for me?  | I have nothing for you
-QRV      - are you ready?  |  I am ready
-QRX      - when will you call again?  |  I will call again at ...
-QRZ      - who is calling me?  |  You are being called by ...
+# QRU      - have you anything for me?  | I have nothing for you
+# QRV      - are you ready?  |  I am ready
+# QRX      - when will you call again?  |  I will call again at ...
+# QRZ      - who is calling me?  |  You are being called by ...
 QSB      - is the strength of my signal varying?  |  You signal strength is varying
-QSD      - is my keying correct, signals distinct ?  |  your keying is incorrect
-QSL      - can you acknowledge receipt ?  |  I am acknowledging receipt
-QSP      - will you relay to?  |  I will relay to ...
-QSV      - shall I send series of VVV?  |  send a series of VVV
-QSX      - will you listen for callsign ... on freq ...?  |  I am listening for ... on freq ...
+# QSD      - is my keying correct, signals distinct ?  |  your keying is incorrect
+# QSL      - can you acknowledge receipt ?  |  I am acknowledging receipt
+# QSP      - will you relay to?  |  I will relay to ...
+# QSV      - shall I send series of VVV?  |  send a series of VVV
+# QSX      - will you listen for callsign ... on freq ...?  |  I am listening for ... on freq ...
 QSY      - shall I change freq?  |  change freq
-QSZ      - shall I send each work twice?  |  send each word twice
+# QSZ      - shall I send each work twice?  |  send each word twice
 QTH      - what is your position?  |  my position is ...
-QTR      - what is the exact time? | the exact time is ...
+# QTR      - what is the exact time? | the exact time is ...
