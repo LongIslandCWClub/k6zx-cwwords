@@ -4,21 +4,21 @@
 
 PREFIX=${HOME}/local/deploy/cwwords
 
-if [ "koch" == "$1" ]; then
+if [ "koch" = "$1" ]; then
     ARG="-f ${PREFIX}/koch.cfg"
-elif [ "cwops" == "$1" ]; then
+elif [ "cwops" = "$1" ]; then
     ARG="-f ${PREFIX}/cwops.cfg"
-elif [ "cwopslist" == "$1" ]; then
+elif [ "cwopslist" = "$1" ]; then
     ARG="-f ${PREFIX}/cwopslist.cfg"
-elif [ "callsigns" == "$1" ]; then
+elif [ "callsigns" = "$1" ]; then
     ARG="-f ${PREFIX}/callsigns.cfg"
-elif [ "calllist" == "$1" ]; then
+elif [ "calllist" = "$1" ]; then
     ARG="-f ${PREFIX}/calllist.cfg"
-elif [ "qsos" == "$1" ]; then
+elif [ "qsos" = "$1" ]; then
     ARG="-f ${PREFIX}/qsos.cfg"
-elif [ "common" == "$1" ]; then
+elif [ "common" = "$1" ]; then
     ARG="-f ${PREFIX}/common.cfg"
-elif [ "commonlist" == "$1" ]; then
+elif [ "commonlist" = "$1" ]; then
     ARG="-f ${PREFIX}/commonlist.cfg"
 else
     ARG="$@"
