@@ -2,25 +2,27 @@
 
 # Run python 'cwwords.py' program to practice Morse Code
 
+set -x
+
 PREFIX=${HOME}/local/deploy/cwwords
 CFG_PREFIX=${HOME}/amateur-radio/cwwords
 
 if [ "koch" = "$1" ]; then
-    ARG="-f ${PREFIX}/koch.cfg"
+    ARG="-f ${CFG_PREFIX}/koch.cfg"
 elif [ "cwops" = "$1" ]; then
-    ARG="-f ${PREFIX}/cwops.cfg"
+    ARG="-f ${CFG_PREFIX}/cwops.cfg"
 elif [ "cwopslist" = "$1" ]; then
-    ARG="-f ${PREFIX}/cwopslist.cfg"
+    ARG="-f ${CFG_PREFIX}/cwopslist.cfg"
 elif [ "callsigns" = "$1" ]; then
-    ARG="-f ${PREFIX}/callsigns.cfg"
+    ARG="-f ${CFG_PREFIX}/callsigns.cfg"
 elif [ "calllist" = "$1" ]; then
-    ARG="-f ${PREFIX}/calllist.cfg"
+    ARG="-f ${CFG_PREFIX}/calllist.cfg"
 elif [ "qsos" = "$1" ]; then
-    ARG="-f ${PREFIX}/qsos.cfg"
+    ARG="-f ${CFG_PREFIX}/qsos.cfg"
 elif [ "common" = "$1" ]; then
-    ARG="-f ${PREFIX}/common.cfg"
+    ARG="-f ${CFG_PREFIX}/common.cfg"
 elif [ "commonlist" = "$1" ]; then
-    ARG="-f ${PREFIX}/commonlist.cfg"
+    ARG="-f ${CFG_PREFIX}/commonlist.cfg"
 else
     ARG="$@"
 fi
