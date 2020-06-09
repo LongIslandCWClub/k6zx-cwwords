@@ -3,6 +3,7 @@
 # Run python 'cwwords.py' program to practice Morse Code
 
 PREFIX=${HOME}/local/deploy/cwwords
+CFG_PREFIX=${HOME}/amateur-radio/cwwords
 
 if [ "koch" = "$1" ]; then
     ARG="-f ${PREFIX}/koch.cfg"
