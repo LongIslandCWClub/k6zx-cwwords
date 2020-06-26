@@ -15,8 +15,10 @@ from qrz import *
 QRZ_USERNAME   = 'K6ZX'
 QRZ_PASSWORD   = 'Sean!12233'
 
+# FOREIGN_CALL_FILE = os.path.join(os.environ['HOME'],
+#                                  'local/deploy/cwwords/database/foreign.dat')
 FOREIGN_CALL_FILE = os.path.join(os.environ['HOME'],
-                                 'local/deploy/cwwords/database/foreign.dat')
+                                 'devel/python/cwwords/database/foreign.dat')
 
 NUM_DOTS = 0
 
@@ -84,7 +86,7 @@ def getStartingCallsign():
     callsign = ""
 
     if os.path.exists(FOREIGN_CALL_FILE):
-        # print(f"getStartingCallsign(): file {FOREIGN_CALL_FILE} exists")
+        print(f"getStartingCallsign(): file {FOREIGN_CALL_FILE} exists")
         with open(FOREIGN_CALL_FILE, 'r') as fileobj:
             for line in fileobj:
                 l = line.strip()
