@@ -4,17 +4,17 @@
 
 import configargparse
 import datetime
+import gtts
 import inspect
 import os
+import pydub
+from pydub.playback import play
 import random
 import re
 import string
 import subprocess
 import sys
 import time
-
-# from db import *
-# from qrz import *
 
 
 
@@ -36,6 +36,11 @@ EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
 EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
 EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
+
+WORD_SND_BASE = "cwword-word-snd"
+WORD_SND_FILE = os.path.join("/tmp", WORD_SND_BASE)
+
+TONE_FILE = os.path.join(sys.path[0], "tone.mp3")
 
 MY_CALLSIGN = "K6ZX"
 MY_SKCC_NUM = 18552
@@ -107,8 +112,12 @@ def parseArguments():
                         help='US callsign file path')
     parser.add_argument('--foreign-call-file', action='store', dest='foreignCallsignFile',
                         help='Foreign callsign file path')
-    # parser.add_argument('--common-file', action='store', dest='commonFile',
-    #                     help='Common words file path')
+    parser.add_argument('--ninja-mode', action='store_true', dest='ninjaMode',
+                        help='Execute program in Ninja mode')
+    parser.add_argument('--ninja-cw-volume', action='store', dest='ninjaCwVolume',
+                        default=0.2,
+                        help='Ninja mode CW volume between 0 - 1')
+    
 
     args = parser.parse_args()
 
@@ -370,7 +379,54 @@ def generateCWSoundFile(progArgs, wordLst):
             print(line)
         
 
+# Ninja mode is based on the Morse Code Ninja website CW training
+# method. It plays the CW for a word/phrase, then the word/phrase is
+# spoken, and then the CW is played again. Then an alert tone is
+# played to signal the next word/phrase sequence. 
+def executeNinjaMode(progArgs, wordLst):
+    # alert tone to delineate word sequence
+    tone = pydub.AudioSegment.from_mp3(TONE_FILE)
+    # reduce volume of alert tone
+    tone = tone - 12                  
+    play(tone)
+    
+    for word in wordLst:
+        # print(f"ninja mode: {word}")
 
+        morseCmd = (f"echo {word} | morse -f {progArgs['freq']} "
+                    f"-v {progArgs['ninjaCwVolume']} "
+                    f"-w {progArgs['wpm']} "
+                    f"-F {progArgs['farns']}")
+        morseCmd = (f"echo {word} | morse -f {progArgs['freq']} "
+                    f"-v {progArgs['ninjaCwVolume']} "
+                    f"-w {progArgs['farns']} "
+                    f"-F {progArgs['wpm']}")
+        proc = subprocess.run(morseCmd, shell=True, encoding='utf-8',
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode:
+            print(f"morse: return: {proc.returncode}")
+
+        time.sleep(1)
+
+        tts = gtts.gTTS(word, lang='en-ca')
+        tts.save(WORD_SND_FILE)
+        wordSnd = pydub.AudioSegment.from_mp3(WORD_SND_FILE)
+        play(wordSnd)
+        
+        time.sleep(0.5)
+    
+        proc = subprocess.run(morseCmd, shell=True, encoding='utf-8',
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode:
+            print(f"morse: return: {proc.returncode}")
+
+        play(tone)
+        
+        time.sleep(2)
+
+        
 # remove duplicate words just for display purposes, no need to show the repeated
 # words or callsigns.
 def removeDuplicates(lst):
@@ -517,7 +573,12 @@ def generateWords(progArgs, charList):
         # print(f"num words: {len(trunWordLst)}")
         # print(f"\n\nwords: {trunWordLst}")
 
-        if progArgs['play']:
+        if progArgs['play'] and progArgs['ninjaMode']:
+            # Add 'vv' to beginning of list
+            # trunWordLst.insert(0, 'vv')
+            executeNinjaMode(progArgs, trunWordLst)
+
+        elif progArgs['play']:
             # Add 'vvvv' to beginning of list
             trunWordLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, trunWordLst)
@@ -691,6 +752,8 @@ def main():
     progArgs['mp3Filename'] = args.mp3Filename
     progArgs['words'] = args.words
     progArgs['qsos'] = args.qsos
+    progArgs['ninjaMode'] = args.ninjaMode
+    progArgs['ninjaCwVolume'] = args.ninjaCwVolume
     if args.wordFile:
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
     if args.usCallsignFile:
