@@ -2,7 +2,7 @@
 
 # Run python 'cwwords.py' program to practice Morse Code
 
-set -x
+# set -x
 
 PREFIX=${HOME}/local/deploy/cwwords
 CFG_PREFIX=${HOME}/amateur-radio/cwwords
@@ -25,6 +25,8 @@ elif [ "commonlist" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/commonlist.cfg"
 elif [ "head" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/head.cfg"
+elif [ "ninja" = "$1" ]; then
+    ARG="-f ${CFG_PREFIX}/ninja.cfg"
 else
     ARG="$@"
 fi
