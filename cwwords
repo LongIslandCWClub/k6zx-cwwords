@@ -7,12 +7,10 @@
 PREFIX=${HOME}/local/deploy/cwwords
 CFG_PREFIX=${HOME}/amateur-radio/cwwords
 
-if [ "koch" = "$1" ]; then
-    ARG="-f ${CFG_PREFIX}/koch.cfg"
-elif [ "cwops" = "$1" ]; then
-    ARG="-f ${CFG_PREFIX}/cwops.cfg"
-elif [ "cwopslist" = "$1" ]; then
-    ARG="-f ${CFG_PREFIX}/cwopslist.cfg"
+if [ "words" = "$1" ]; then
+    ARG="-f ${CFG_PREFIX}/words.cfg"
+elif [ "wordlist" = "$1" ]; then
+    ARG="-f ${CFG_PREFIX}/wordlist.cfg"
 elif [ "callsigns" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/callsigns.cfg"
 elif [ "calllist" = "$1" ]; then
@@ -23,8 +21,6 @@ elif [ "common" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/common.cfg"
 elif [ "commonlist" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/commonlist.cfg"
-elif [ "head" = "$1" ]; then
-    ARG="-f ${CFG_PREFIX}/head.cfg"
 elif [ "ninja" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/ninja.cfg"
 else

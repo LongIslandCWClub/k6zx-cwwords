@@ -32,10 +32,10 @@ VOWELS = ['a', 'e', 'i', 'o', 'u', 'y']
 
 LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
-EBOOK2CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
+CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
-EBOOK2CW_OUTPUT_BASE = "ebook2cwoutput"
-EBOOK2CW_OUTPUT_FILE = os.path.join("/tmp", EBOOK2CW_OUTPUT_BASE)
+CW_OUTPUT_BASE = "cwoutput.mp3"
+CW_OUTPUT_FILE = os.path.join("/tmp", CW_OUTPUT_BASE)
 
 WORD_SND_BASE = "cwword-word-snd"
 WORD_SND_FILE = os.path.join("/tmp", WORD_SND_BASE)
@@ -90,23 +90,23 @@ def parseArguments():
     parser.add_argument('--farns-wpm', action='store', dest='farns', type=int,
                         default=5,
                         help='Farnsworth character speed to generate')
-    parser.add_argument('--sound-file', action='store', dest='mp3Filename',
-                        type=str, default=EBOOK2CW_OUTPUT_FILE,
+    parser.add_argument('--sound-file', action='store', dest='soundFilename',
+                        type=str, default=CW_OUTPUT_FILE,
                         help='CW mp3 sound output file')
-    parser.add_argument('--play', action='store_true', dest='play',
+    parser.add_argument('--play', action='store_true', dest='play', default=False,
                         help='Play cw word file')
     parser.add_argument('--qsos', action='store_true', dest='qsos',
                         help='Generate QSOs')
     parser.add_argument('--rm-abbr', action='store_true', dest='rmAbbr',
-                        help='Remove abbreviations from words')
+                        default=False, help='Remove abbreviations from words')
     parser.add_argument('--total-words', action='store', dest='totalWords',
-                        type=int, default=10000,
+                        type=int, default=20,
                         help='Total number of words OR lines of QSO to output')
     parser.add_argument('--qso-line', action='store', dest='qsoLine',
                         type=str)
     parser.add_argument('--sidetone-freq', action='store', dest='freq',
                         type=int, default=600, help='Sidetone frequency (Hz)')
-    parser.add_argument('--word-file', action='store', dest='wordFile',
+    parser.add_argument('--word-file', action='store', dest='wordFile', 
                         help='Word file path')
     parser.add_argument('--us-call-file', action='store', dest='usCallsignFile',
                         help='US callsign file path')
@@ -138,20 +138,22 @@ def getCWOpsChars(numChars):
     return CWOPS_CHARS[:numChars]
 
 
-def displayParameters(args):
+def displayParameters(args, charList):
     if args['numKochChars'] is not None:
-        text = f"Num Koch chars: {args['numKochChars']}, "
+        text = f"Num Koch chars: {args['numKochChars']}\n"
     else:
-        text = f"Num CWOPS chars: {args['numCWOpsChars']}, "
+        text = f"Num CWOPS chars: {args['numCWOpsChars']}\n"
 
-    text += (f"WPM: {args['wpm']}, Farns WPM: {args['farns']}, "
-             f"extra space: {args['extraWordSpace']} sec\n")
-    if args['repeat'] is not None:
-        text += f"repeat: {args['repeat']}, "
-
-    if 'wordFile' in args and args['wordFile'] is not None:
-        text += f"file: {args['wordFile']}"
+    if args['numKochChars'] is not None and args['numKochChars'] < 40:
+        print(f"Koch characters: {charList}")
+    elif args['numCWOpsChars'] is not None and args['numCWOpsChars'] < 40:
+        print(f"CW Ops characters: {charList}")
         
+    if args['play']:
+        text += (f"WPM: {args['wpm']}, Farns WPM: {args['farns']}, "
+                 f"extra space: {args['extraWordSpace']} sec\n")
+        if args['repeat'] is not None:
+            text += f"repeat: {args['repeat']}, "
 
     print(text)
 
@@ -346,20 +348,21 @@ def generateCWSoundFile(progArgs, wordLst):
     words = ""
 
     # write word list to temporary file for input to 'ebook2cw' program
-    with open(EBOOK2CW_INPUT_FILE, 'w') as fileobj:
+    with open(CW_INPUT_FILE, 'w') as fileobj:
         for word in wordLst:
             fileobj.write(f"{word}\n")
 
     for file in os.listdir('/tmp'):
         # print(f"file: {file}")
-        if file.find(EBOOK2CW_OUTPUT_BASE) > -1 :
+        if file.find(CW_OUTPUT_BASE) > -1 :
             absFile = os.path.join("/tmp", file)
             os.remove(absFile)
             # print(f"remove stale mp3 file: {absFile}")
 
     cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
-           f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} -o {progArgs['mp3Filename']} "
-           f"{EBOOK2CW_INPUT_FILE}")
+           f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} "
+           f"-o {progArgs['soundFilename']} "
+           f"{CW_INPUT_FILE}")
 
     # proc = subprocess.run(cmd, shell=True, capture_output=True)
     proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
@@ -367,14 +370,6 @@ def generateCWSoundFile(progArgs, wordLst):
     if proc.returncode:
         print(f"ebook2cw return: {proc.returncode}")
     for line in proc.stdout.split('\n'):
-        # if re.search("^ebook2cw", line):
-        #     print(line)
-        # elif re.search("^Speed", line):
-        #     print(line)
-        # elif re.search("^Effective", line):
-        #     print(line)
-        # elif re.search("^Total", line):
-        #     print(line)
         if re.search("^Total", line):
             print(line)
         
@@ -440,7 +435,7 @@ def removeDuplicates(lst):
 
 def playCWSoundFile(progArgs, wordLst):
     for file in os.listdir('/tmp'):
-        if file.find(EBOOK2CW_OUTPUT_BASE) > -1:
+        if file.find(CW_OUTPUT_BASE) > -1:
             absFile = os.path.join("/tmp", file)
             cmd = f"/usr/bin/mpg123 {absFile}"
             # proc = subprocess.run(cmd, shell=True)
@@ -573,12 +568,13 @@ def generateWords(progArgs, charList):
         # print(f"num words: {len(trunWordLst)}")
         # print(f"\n\nwords: {trunWordLst}")
 
-        if progArgs['play'] and progArgs['ninjaMode']:
+        if progArgs['ninjaMode']:
             # Add 'vv' to beginning of list
             # trunWordLst.insert(0, 'vv')
             executeNinjaMode(progArgs, trunWordLst)
 
         elif progArgs['play']:
+            print('DEBUG: playing CW...')
             # Add 'vvvv' to beginning of list
             trunWordLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, trunWordLst)
@@ -745,11 +741,10 @@ def main():
     progArgs['totalWords'] = args.totalWords
     progArgs['qsoLine'] = args.qsoLine
     progArgs['rmAbbr'] = args.rmAbbr
-    progArgs['mp3Filename'] = args.mp3Filename
+    progArgs['soundFilename'] = args.soundFilename
     progArgs['play'] = args.play
     progArgs['maxWordLen'] = args.maxWordLen
     progArgs['minWordLen'] = args.minWordLen
-    progArgs['mp3Filename'] = args.mp3Filename
     progArgs['words'] = args.words
     progArgs['qsos'] = args.qsos
     progArgs['ninjaMode'] = args.ninjaMode
@@ -774,14 +769,14 @@ def main():
         # print(f"CW Ops characters: {charList}")
         # print(f"Number of CW Ops characters: {progArgs['numCWOpsChars']}\n")
 
-    displayParameters(progArgs)
+    displayParameters(progArgs, charList)
     
     if progArgs['callsigns']:
         generateCallsigns(progArgs, charList)
     elif progArgs['words']:
         generateWords(progArgs, charList)
-    else:
-        generateQSOs(progArgs, charList)
+    # else:
+    #     generateQSOs(progArgs, charList)
 
     sys.exit(0)
 
