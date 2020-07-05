@@ -379,11 +379,18 @@ def generateCWSoundFile(progArgs, wordLst):
 # spoken, and then the CW is played again. Then an alert tone is
 # played to signal the next word/phrase sequence. 
 def executeNinjaMode(progArgs, wordLst):
+    # get the terminal width
+    rows, columns = subprocess.check_output(['stty', 'size']).decode().split()
+    columns = int(columns)         # convert to an integer
+    numChars = 0
+    print('')
+
     # alert tone to delineate word sequence
     tone = pydub.AudioSegment.from_mp3(TONE_FILE)
     # reduce volume of alert tone
     tone = tone - 12                  
     play(tone)
+
     
     for word in wordLst:
         morseCmdLst = ['morse', f"-f {progArgs['freq']}", f"-v {progArgs['ninjaCwVolume']}",
@@ -420,8 +427,16 @@ def executeNinjaMode(progArgs, wordLst):
     
 
         play(tone)
-        
         time.sleep(1)
+        numChars += len(word) + 1
+        if numChars >= columns:
+            endChar = '\n'
+            numChars = 0
+        else:
+            endChar = ' '
+        print(f"{word} ", end=endChar, flush=True)
+        
+    print('\n')
 
         
 # remove duplicate words just for display purposes, no need to show the repeated
@@ -586,7 +601,8 @@ def generateWords(progArgs, charList):
         else:
             pass
 
-        displayGeneratedText(progArgs, trunWordLst)
+        if not progArgs['ninjaMode']:
+            displayGeneratedText(progArgs, trunWordLst)
     else:
         print("No words were found using the input parameters, decrease word length")
         print("and/or increase number of characters in set.")
