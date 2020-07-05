@@ -386,40 +386,42 @@ def executeNinjaMode(progArgs, wordLst):
     play(tone)
     
     for word in wordLst:
-        # print(f"ninja mode: {word}")
-
-        morseCmd = (f"echo {word} | morse -f {progArgs['freq']} "
-                    f"-v {progArgs['ninjaCwVolume']} "
-                    f"-w {progArgs['wpm']} "
-                    f"-F {progArgs['farns']}")
-        morseCmd = (f"echo {word} | morse -f {progArgs['freq']} "
-                    f"-v {progArgs['ninjaCwVolume']} "
-                    f"-w {progArgs['farns']} "
-                    f"-F {progArgs['wpm']}")
-        proc = subprocess.run(morseCmd, shell=True, encoding='utf-8',
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if proc.returncode:
-            print(f"morse: return: {proc.returncode}")
+        morseCmdLst = ['morse', f"-f {progArgs['freq']}", f"-v {progArgs['ninjaCwVolume']}",
+                       f"-w {progArgs['farns']}", f"-F {progArgs['wpm']}"]
+        # print(f"DEBUG: morseCmdLst = {morseCmdLst}")
+        proc = subprocess.Popen(morseCmdLst, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        try:
+            # print(f"DEBUG word: {word}")
+            output, errors = proc.communicate(input=word.encode(), timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            output, errors = proc.communicate()
+            print(f"ERROR: {errors}")
 
         time.sleep(1)
 
+        # Right now, I like the Canadian voice in gTTS
         tts = gtts.gTTS(word, lang='en-ca')
         tts.save(WORD_SND_FILE)
         wordSnd = pydub.AudioSegment.from_mp3(WORD_SND_FILE)
         play(wordSnd)
+
+        proc = subprocess.Popen(morseCmdLst, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        try:
+            output, errors = proc.communicate(input=word.encode(), timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            output, errors = proc.communicate()
+            print(f"ERROR: {errors}")
         
-        time.sleep(0.5)
+        time.sleep(1)
     
-        proc = subprocess.run(morseCmd, shell=True, encoding='utf-8',
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if proc.returncode:
-            print(f"morse: return: {proc.returncode}")
 
         play(tone)
         
-        time.sleep(2)
+        time.sleep(1)
 
         
 # remove duplicate words just for display purposes, no need to show the repeated
