@@ -30,6 +30,14 @@ CWOPS_CHARS = ['t', 'e', 'a', 'n', 'o', 'i', 's', '1', '4', 'r',
 
 VOWELS = ['a', 'e', 'i', 'o', 'u', 'y']
 
+PHONETIC_CHARS = [('A', 'alpha'), ('B', 'bravo'), ('C', 'charlie'), ('D', 'delta'),
+                  ('E', 'echo'), ('F', 'foxtrot'), ('G', 'golf'), ('H', 'hello'),
+                  ('I', 'india'), ('J', 'juliet'), ('K', 'kilo'), ('L', 'lima'),
+                  ('M', 'mike'), ('N', 'november'), ('O', 'oscar'), ('P', 'papa'),
+                  ('Q', 'quebec'), ('R', 'romeo'), ('S', 'sierra'), ('T', 'tango'),
+                  ('U', 'uniform'), ('V', 'victor'), ('W', 'whiskey'),
+                  ('X', 'xray'), ('Y', 'yankee'), ('Z', 'zulu')]
+
 LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
 CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
@@ -113,10 +121,13 @@ def parseArguments():
     parser.add_argument('--foreign-call-file', action='store', dest='foreignCallsignFile',
                         help='Foreign callsign file path')
     parser.add_argument('--ninja-mode', action='store_true', dest='ninjaMode',
-                        help='Execute program in Ninja mode')
+                        help='Words generated in the Morse Ninja style')
     parser.add_argument('--ninja-cw-volume', action='store', dest='ninjaCwVolume',
                         default=0.2,
                         help='Ninja mode CW volume between 0 - 1')
+    parser.add_argument('--ninja-call-phonetic', action='store_true',
+                        dest='ninjaCallPhonetic',
+                        help='Speak ninja callsigns phonetically')
     
 
     args = parser.parse_args()
@@ -372,8 +383,21 @@ def generateCWSoundFile(progArgs, wordLst):
     for line in proc.stdout.split('\n'):
         if re.search("^Total", line):
             print(line)
-        
 
+
+def convertToPhonetic(word):
+    phoneticWord = ""
+
+    for char in word:
+        if char.isdigit():
+            phoneticWord += (char + "  ")
+        for elem in PHONETIC_CHARS:
+            if elem[0] == char:
+                phoneticWord += (elem[1] + "  ")
+
+    return phoneticWord
+
+    
 # Ninja mode is based on the Morse Code Ninja website CW training
 # method. It plays the CW for a word/phrase, then the word/phrase is
 # spoken, and then the CW is played again. Then an alert tone is
@@ -384,7 +408,8 @@ def executeNinjaMode(progArgs, wordLst):
     # reduce volume of alert tone
     tone = tone - 12                  
     play(tone)
-    
+
+    print("")
     for word in wordLst:
         # print(f"ninja mode: {word}")
 
@@ -404,7 +429,14 @@ def executeNinjaMode(progArgs, wordLst):
 
         time.sleep(1)
 
-        tts = gtts.gTTS(word, lang='en-ca')
+        if progArgs['ninjaCallPhonetic']:
+            phonWords = convertToPhonetic(word)
+
+        if progArgs['ninjaCallPhonetic']:
+            tts = gtts.gTTS(phonWords, lang='en-ca')
+        else:
+            tts = gtts.gTTS(word, lang='en-ca')
+            
         tts.save(WORD_SND_FILE)
         wordSnd = pydub.AudioSegment.from_mp3(WORD_SND_FILE)
         play(wordSnd)
@@ -420,6 +452,11 @@ def executeNinjaMode(progArgs, wordLst):
         play(tone)
         
         time.sleep(2)
+
+        print(f"{word}  ", end="", flush=True)
+
+    print("\n")
+
 
         
 # remove duplicate words just for display purposes, no need to show the repeated
@@ -439,7 +476,8 @@ def playCWSoundFile(progArgs, wordLst):
             absFile = os.path.join("/tmp", file)
             cmd = f"/usr/bin/mpg123 {absFile}"
             # proc = subprocess.run(cmd, shell=True)
-            proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
+            proc = subprocess.run(cmd, shell=True, encoding='utf-8',
+                                  stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
             if proc.returncode:
                 print(f"mpg123 return: {proc.returncode}")
@@ -449,8 +487,7 @@ def playCWSoundFile(progArgs, wordLst):
 def displayGeneratedText(progArgs, wordLst):
     # get the terminal width
     rows, columns = subprocess.check_output(['stty', 'size']).decode().split()
-    columns = int(columns)         # convert to an integer
-    # print(f"displayGeneratedText() rows {rows}, columns {columns} type {type(columns)}")
+    columns = int(columns)
 
     if progArgs['words']:
         print("\nWords Generated:")
@@ -536,8 +573,9 @@ def generateCallsigns(progArgs, charList):
 
             finalCallsignLst = repeatLst
 
-
-        if progArgs['play']:
+        if progArgs['ninjaMode']:
+            executeNinjaMode(progArgs, finalCallsignLst)
+        elif progArgs['play']:
             # Add 'vvvv' to beginning of list
             finalCallsignLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, finalCallsignLst)
@@ -547,7 +585,8 @@ def generateCallsigns(progArgs, charList):
         else:
             pass
 
-        displayGeneratedText(progArgs, finalCallsignLst)
+        if not progArgs['ninjaMode']:
+            displayGeneratedText(progArgs, finalCallsignLst)
     else:
         print("No callsigns were found using the input parameters, ")
         print("increase number of characters in set.")
@@ -569,12 +608,10 @@ def generateWords(progArgs, charList):
         # print(f"\n\nwords: {trunWordLst}")
 
         if progArgs['ninjaMode']:
-            # Add 'vv' to beginning of list
-            # trunWordLst.insert(0, 'vv')
             executeNinjaMode(progArgs, trunWordLst)
 
         elif progArgs['play']:
-            print('DEBUG: playing CW...')
+            # print('DEBUG: playing CW...')
             # Add 'vvvv' to beginning of list
             trunWordLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, trunWordLst)
@@ -584,7 +621,8 @@ def generateWords(progArgs, charList):
         else:
             pass
 
-        displayGeneratedText(progArgs, trunWordLst)
+        if not progArgs['ninjaMode']:
+            displayGeneratedText(progArgs, trunWordLst)
     else:
         print("No words were found using the input parameters, decrease word length")
         print("and/or increase number of characters in set.")
@@ -749,6 +787,7 @@ def main():
     progArgs['qsos'] = args.qsos
     progArgs['ninjaMode'] = args.ninjaMode
     progArgs['ninjaCwVolume'] = args.ninjaCwVolume
+    progArgs['ninjaCallPhonetic'] = args.ninjaCallPhonetic
     if args.wordFile:
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
     if args.usCallsignFile:
