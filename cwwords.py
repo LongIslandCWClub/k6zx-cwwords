@@ -403,6 +403,12 @@ def convertToPhonetic(word):
 # spoken, and then the CW is played again. Then an alert tone is
 # played to signal the next word/phrase sequence. 
 def executeNinjaMode(progArgs, wordLst):
+    # get the terminal width
+    rows, columns = subprocess.check_output(['stty', 'size']).decode().split()
+    columns = int(columns)         # convert to an integer
+    numChars = 0
+    print('')
+
     # alert tone to delineate word sequence
     tone = pydub.AudioSegment.from_mp3(TONE_FILE)
     # reduce volume of alert tone
@@ -411,21 +417,18 @@ def executeNinjaMode(progArgs, wordLst):
 
     print("")
     for word in wordLst:
-        # print(f"ninja mode: {word}")
-
-        morseCmd = (f"echo {word} | morse -f {progArgs['freq']} "
-                    f"-v {progArgs['ninjaCwVolume']} "
-                    f"-w {progArgs['wpm']} "
-                    f"-F {progArgs['farns']}")
-        morseCmd = (f"echo {word} | morse -f {progArgs['freq']} "
-                    f"-v {progArgs['ninjaCwVolume']} "
-                    f"-w {progArgs['farns']} "
-                    f"-F {progArgs['wpm']}")
-        proc = subprocess.run(morseCmd, shell=True, encoding='utf-8',
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if proc.returncode:
-            print(f"morse: return: {proc.returncode}")
+        morseCmdLst = ['morse', f"-f {progArgs['freq']}", f"-v {progArgs['ninjaCwVolume']}",
+                       f"-w {progArgs['farns']}", f"-F {progArgs['wpm']}"]
+        # print(f"DEBUG: morseCmdLst = {morseCmdLst}")
+        proc = subprocess.Popen(morseCmdLst, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        try:
+            # print(f"DEBUG word: {word}")
+            output, errors = proc.communicate(input=word.encode(), timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            output, errors = proc.communicate()
+            print(f"ERROR: {errors}")
 
         time.sleep(1)
 
@@ -433,6 +436,7 @@ def executeNinjaMode(progArgs, wordLst):
             phonWords = convertToPhonetic(word)
 
         if progArgs['ninjaCallPhonetic']:
+            # Right now, I like the Canadian voice in gTTS
             tts = gtts.gTTS(phonWords, lang='en-ca')
         else:
             tts = gtts.gTTS(word, lang='en-ca')
@@ -440,18 +444,30 @@ def executeNinjaMode(progArgs, wordLst):
         tts.save(WORD_SND_FILE)
         wordSnd = pydub.AudioSegment.from_mp3(WORD_SND_FILE)
         play(wordSnd)
+
+        proc = subprocess.Popen(morseCmdLst, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        try:
+            output, errors = proc.communicate(input=word.encode(), timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            output, errors = proc.communicate()
+            print(f"ERROR: {errors}")
         
-        time.sleep(0.5)
+        time.sleep(1)
     
-        proc = subprocess.run(morseCmd, shell=True, encoding='utf-8',
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if proc.returncode:
-            print(f"morse: return: {proc.returncode}")
 
         play(tone)
+        time.sleep(1)
+        numChars += len(word) + 1
+        if numChars >= columns:
+            endChar = '\n'
+            numChars = 0
+        else:
+            endChar = ' '
+        print(f"{word} ", end=endChar, flush=True)
         
-        time.sleep(2)
+    print('\n')
 
         print(f"{word}  ", end="", flush=True)
 
