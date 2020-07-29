@@ -23,6 +23,8 @@ elif [ "commonlist" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/commonlist.cfg"
 elif [ "ninja" = "$1" ]; then
     ARG="-f ${CFG_PREFIX}/ninja.cfg"
+elif [ "callninja" = "$1" ]; then
+    ARG="-f ${CFG_PREFIX}/callninja.cfg"
 else
     ARG="$@"
 fi

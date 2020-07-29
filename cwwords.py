@@ -469,10 +469,6 @@ def executeNinjaMode(progArgs, wordLst):
         
     print('\n')
 
-        print(f"{word}  ", end="", flush=True)
-
-    print("\n")
-
 
         
 # remove duplicate words just for display purposes, no need to show the repeated
