@@ -11,6 +11,7 @@ import pydub
 from pydub.playback import play
 import random
 import re
+import shutil
 import string
 import subprocess
 import sys
@@ -38,11 +39,12 @@ PHONETIC_CHARS = [('A', 'alpha'), ('B', 'bravo'), ('C', 'charlie'), ('D', 'delta
                   ('U', 'uniform'), ('V', 'victor'), ('W', 'whiskey'),
                   ('X', 'xray'), ('Y', 'yankee'), ('Z', 'zulu')]
 
-LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
+# candidate for deletion
+# LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
 
 CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
-CW_OUTPUT_BASE = "cwoutput.mp3"
+CW_OUTPUT_BASE = "cwwords"
 CW_OUTPUT_FILE = os.path.join("/tmp", CW_OUTPUT_BASE)
 
 WORD_SND_BASE = "cwword-word-snd"
@@ -50,28 +52,80 @@ WORD_SND_FILE = os.path.join("/tmp", WORD_SND_BASE)
 
 TONE_FILE = os.path.join(sys.path[0], "tone.mp3")
 
-MY_CALLSIGN = "K6ZX"
-MY_SKCC_NUM = 18552
+DATA_DIR          = os.path.abspath(os.path.join(sys.path[0], "../cwwords-data"))
+US_CALL_FILE      = os.path.join(DATA_DIR, 'EN.dat')
+FOREIGN_CALL_FILE = os.path.join(DATA_DIR, 'foreign.dat')
 
-QRZ_USERNAME   = 'K6ZX'
-QRZ_PASSWORD   = 'Sean!12233'
+CONFIG_FILE_LIST = ['default-calllist.cfg', 'default-callninja.cfg',
+                    'default-callsigns.cfg', 'default-common.cfg',
+                    'default-commonlist.cfg', 'default-ninja.cfg',
+                    'default-qsos.cfg', 'default-wordlist.cfg',
+                    'default-words.cfg']
 
-MAX_QSO_LINES  = 6
+# MY_CALLSIGN = "K6ZX"
+# MY_SKCC_NUM = 18552
+
+# QRZ_USERNAME   = 'K6ZX'
+# QRZ_PASSWORD   = 'Sean!12233'
+
+# MAX_QSO_LINES  = 6
+
+# Class to allow newlines to be embedded in the parseArguments()
+# configargparse epilog help string
+class CustomFormatter(configargparse.ArgumentDefaultsHelpFormatter,
+                      configargparse.RawDescriptionHelpFormatter):
+    pass
 
 
 def parseArguments():
-    p = ("Generate CW sound file with English words for code practice. The program "
-         "either plays the CW sound file or saves the CW words in an mp3 file. "
-         "The words consist of characters from the Koch Method of learning Morse "
-         "Code, the number of Koch letters can be "
-         "specified and only words with this set of letters are generated. The "
-         "Farnsworth Method is also available and the spacing between charaters "
-         "and words may be specified." 
-         )
 
+    p = """
+'cwwords' is a Morse Code practice application that has several 
+different modes to assist in CW training. There are three fundamental 
+modes used for training: word generation, callsign generation, and 
+'ninja' mode. For all of these modes there are parameters that can be 
+set to control the character set to use and the details of the Morse 
+Code that is generated.\n\n
+
+The character set to use for the word or callsign generation can be 
+set. This is intended for training when the full 40 characters have 
+not yet been learned, but enough have been learned to start useful 
+training with words and callsigns. There are two different character 
+training 'orders', the Koch character order and the CW Academy 
+character order. The number of characters in one of these orders is 
+identified and then words or callsigns that are generated are limited 
+to these characters. Details of the the words generated may also be 
+set: word length: to allow shorter words to be trained initially then 
+progressing to longer words and number of words in each session.\n
+
+Additionally the details of the Morse Code that is generated 
+can be specified with the usual parameters: tone frequency, character
+speed, farnsworth speec, additional word spacing, number of times to 
+repeat each word. 
+
+There are three basic modes of operation: word generation, callsign
+generation, and 'ninja' mode.\n 
+Word generation mode generates words, filtered according to the settings 
+to the mode (e.g. word length, character set) and then the Morse Code 
+for the words is played.\n
+Callsign generation mode performs a similar function to word generation, 
+except that callsigns (both U.S. and International) are generated.\n
+'Ninja' mode is a mode that follows the unique teaching method pioneered 
+(as far as I know) by Kurt Zoglmann, AD0WE and made popular on his website,
+<https://morsecode.ninja>. In this mode, an alert tone is played to signify
+the start of a word sequence. The word sequence consists of the Morse Code 
+for a word, followed by the spoken word, followed by the Morse Code for the
+word again. This sequence repeats for the number of words that has been 
+configured. As in the other modes, the details of the character set, word 
+filtering, and code speed can all be specified.
+
+ """
+    
     parser = configargparse.ArgumentParser(description='CW Words audio file generator.',
-                                      epilog=p)
+                                           epilog=p, formatter_class=CustomFormatter)
 
+    parser.add_argument('--init', action='store', dest='init',
+                        help='Initialize cwwords.py configuration files') 
     parser.add_argument('--words', action='store_true', dest='words',
                         help='Generate words')
     parser.add_argument('--callsigns', action='store_true', dest='callsigns',
@@ -98,6 +152,8 @@ def parseArguments():
     parser.add_argument('--farns-wpm', action='store', dest='farns', type=int,
                         default=5,
                         help='Farnsworth character speed to generate')
+    parser.add_argument('--noise', action='store', dest='noiseSNR',
+                        type=str, default=0, help="Add background noise with SNR")
     parser.add_argument('--sound-file', action='store', dest='soundFilename',
                         type=str, default=CW_OUTPUT_FILE,
                         help='CW mp3 sound output file')
@@ -116,10 +172,10 @@ def parseArguments():
                         type=int, default=600, help='Sidetone frequency (Hz)')
     parser.add_argument('--word-file', action='store', dest='wordFile', 
                         help='Word file path')
-    parser.add_argument('--us-call-file', action='store', dest='usCallsignFile',
-                        help='US callsign file path')
-    parser.add_argument('--foreign-call-file', action='store', dest='foreignCallsignFile',
-                        help='Foreign callsign file path')
+    # parser.add_argument('--us-call-file', action='store', dest='usCallsignFile',
+    #                     help='US callsign file path')
+    # parser.add_argument('--foreign-call-file', action='store', dest='foreignCallsignFile',
+    #                     help='Foreign callsign file path')
     parser.add_argument('--ninja-mode', action='store_true', dest='ninjaMode',
                         help='Words generated in the Morse Ninja style')
     parser.add_argument('--ninja-cw-volume', action='store', dest='ninjaCwVolume',
@@ -140,6 +196,68 @@ def parseArguments():
 
     return args
 
+
+def processArguments(args):
+    progArgs = {}
+    progArgs['init'] = args.init
+    progArgs['callsigns'] = args.callsigns
+    progArgs['repeat'] = args.repeat
+    progArgs['numKochChars'] = args.numKochChars
+    progArgs['numCWOpsChars'] = args.numCWOpsChars
+    progArgs['farns'] = args.farns
+    progArgs['wpm'] = args.wpm
+    progArgs['noise'] = args.noiseSNR
+    progArgs['extraWordSpace'] = args.extraWordSpace
+    progArgs['freq'] = args.freq
+    progArgs['totalWords'] = args.totalWords
+    progArgs['qsoLine'] = args.qsoLine
+    progArgs['rmAbbr'] = args.rmAbbr
+    progArgs['soundFilename'] = args.soundFilename
+    progArgs['play'] = args.play
+    progArgs['maxWordLen'] = args.maxWordLen
+    progArgs['minWordLen'] = args.minWordLen
+    progArgs['words'] = args.words
+    progArgs['qsos'] = args.qsos
+    progArgs['ninjaMode'] = args.ninjaMode
+    progArgs['ninjaCwVolume'] = args.ninjaCwVolume
+    progArgs['ninjaCallPhonetic'] = args.ninjaCallPhonetic
+    if args.wordFile:
+        progArgs['wordFile'] = os.path.abspath(args.wordFile)
+    # if args.usCallsignFile:
+    #     progArgs['usCallsignFile'] = os.path.abspath(args.usCallsignFile)
+    # if args.foreignCallsignFile:
+    #     progArgs['foreignCallsignFile'] = os.path.abspath(args.foreignCallsignFile)
+    # if args.commonFile:
+    #     progArgs['commonFile'] = os.path.abspath(args.commonFile)
+        
+    # print(f"args: {progArgs}")
+
+    return progArgs
+
+
+def initCwwords(args):
+    # Initialize cwwwords.py by creating default configuration files
+    # for each of the functional modes of the program
+    absPath = os.path.abspath(args['init'])
+
+    if not os.path.exists(absPath):
+        ans = input(f"The directory '{absPath}' does not exist, Create it (y or n) ")
+        if ans == 'y' or ans == 'Y':
+            os.mkdir(absPath)
+        else:
+            print(f"Directory not created, exiting...")
+            sys.exit(0)
+    else:
+        print(f"The directory '{absPath}' exists.")
+
+    print('Creating init files...')
+    for file in CONFIG_FILE_LIST:
+        dstFile = file.split('-')[1]
+        dstPath = os.path.join(absPath, dstFile)
+        shutil.copy(file, dstPath)
+        print(f"  creating: {dstPath}")
+
+    
 
 def getKochChars(numChars):
     return KOCH_CHARS[:numChars]
@@ -168,22 +286,25 @@ def displayParameters(args, charList):
 
     print(text)
 
-    
-def getLOTWLogCallsigns():
-    calllst = []
-    logDbase = LogDatabase(LOG_DATABASE_FILE)          # init LogDatabase object
-    dbCallLst = logDbase.doDBQuery("select call from callsigndata")
 
-    for call in dbCallLst:
-        # print(f"call: {call[0]}")
-        calllst.append(call[0])
+# candidate for deletion -- 
+# def getLOTWLogCallsigns():
+#     calllst = []
+#     logDbase = LogDatabase(LOG_DATABASE_FILE)          # init LogDatabase object
+#     dbCallLst = logDbase.doDBQuery("select call from callsigndata")
 
-    return calllst
+#     for call in dbCallLst:
+#         # print(f"call: {call[0]}")
+#         calllst.append(call[0])
+
+#     return calllst
+
 
 def getUSCallsigns(args):
     callLst = []
 
-    with open(args['usCallsignFile'], 'r') as fileobj:
+    # with open(args['usCallsignFile'], 'r') as fileobj:
+    with open(US_CALL_FILE, 'r') as fileobj:
         for line in fileobj:
             elem = {}
             call = line.split('|')
@@ -211,7 +332,8 @@ def getUSCallsigns(args):
 def getForeignCallsigns(args):
     callLst = []
 
-    with open(args['foreignCallsignFile'], 'r') as fileobj:
+    # with open(args['foreignCallsignFile'], 'r') as fileobj:
+    with open(FOREIGN_CALL_FILE, 'r') as fileobj:
         for line in fileobj:
             # print(f"line : {line}")
             elem = {}
@@ -267,7 +389,7 @@ def getCallsignList(progArgs, charList):
         usLst.append(x['callsign'])
 
     # print(f"DEBUG: {usLst}")
-    print(f"Number of US callsigns: {len(usLst)}")
+    # print(f"Number of US callsigns: {len(usLst)}")
 
     usLst = filterCallsigns(charList, usLst)
     
@@ -277,11 +399,10 @@ def getCallsignList(progArgs, charList):
         foreignLst.append(x['callsign'])
         
     # print(f"DEBUG: {foreignDataLst}")
-    print(f"Number of foreign callsigns: {len(foreignLst)}")
+    # print(f"Number of foreign callsigns: {len(foreignLst)}")
 
     foreignLst = filterCallsigns(charList, foreignLst)
     
-    # temporarily return empty list for foreign list
     return usLst, foreignLst
 
 
@@ -370,10 +491,21 @@ def generateCWSoundFile(progArgs, wordLst):
             os.remove(absFile)
             # print(f"remove stale mp3 file: {absFile}")
 
+    if progArgs['noise']:
+        noiseInt = int(progArgs['noise'])
+        if noiseInt < 0:
+            noiseClause = f"-N \"{progArgs['noise']}\""
+        else:
+            noiseClause = f"-N {progArgs['noise']}"
+    else:
+        noiseClause = ""
+        
     cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
            f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} "
-           f"-o {progArgs['soundFilename']} "
+           f"{noiseClause} -o {progArgs['soundFilename']} "
            f"{CW_INPUT_FILE}")
+    # print(f"DEBUG: cmd = {cmd}")
+    
 
     # proc = subprocess.run(cmd, shell=True, capture_output=True)
     proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
@@ -484,15 +616,17 @@ def removeDuplicates(lst):
 
 def playCWSoundFile(progArgs, wordLst):
     for file in os.listdir('/tmp'):
+        # print(f"playCWSoundFile(): file -- {file}")
         if file.find(CW_OUTPUT_BASE) > -1:
             absFile = os.path.join("/tmp", file)
             cmd = f"/usr/bin/mpg123 {absFile}"
-            # proc = subprocess.run(cmd, shell=True)
+            # print(f"playCWSoundFile(): sndfile -- {absFile}")
+
             proc = subprocess.run(cmd, shell=True, encoding='utf-8',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
             if proc.returncode:
-                print(f"mpg123 return: {proc.returncode}")
+                print(f"ERROR: mpg123 return: {proc.returncode}")
 
 
 
@@ -644,172 +778,146 @@ def generateSkccNum():
     rnum = random.randint(1, 25000)
     return rnum
     
-def generateQSOs(progArgs, charList):
-    print('Generating QSOs...')
-    callLst = getLOTWLogCallsigns()
-    print(f"num LOTW calls: {len(callLst)}")
-    random.shuffle(callLst)
-    dxStation = callLst[0]
+# def generateQSOs(progArgs, charList):
+#     print('Generating QSOs...')
+#     callLst = getLOTWLogCallsigns()
+#     print(f"num LOTW calls: {len(callLst)}")
+#     random.shuffle(callLst)
+#     dxStation = callLst[0]
 
-    rnum = random.randint(0, 100)
-    # if rnum > 50:
-    if rnum > 100:      # modify so call is always TO me, not FROM me
-        dxStation = callLst[0]
-        deStation = MY_CALLSIGN
-    else:
-        dxStation = MY_CALLSIGN
-        deStation = callLst[0]
+#     rnum = random.randint(0, 100)
+#     # if rnum > 50:
+#     if rnum > 100:      # modify so call is always TO me, not FROM me
+#         dxStation = callLst[0]
+#         deStation = MY_CALLSIGN
+#     else:
+#         dxStation = MY_CALLSIGN
+#         deStation = callLst[0]
 
-    dxCall = f"{dxStation} DE {deStation}"
-    deCall = f"{deStation} DE {dxStation}"
+#     dxCall = f"{dxStation} DE {deStation}"
+#     deCall = f"{deStation} DE {dxStation}"
 
-    qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
-    dxCallData = qrz.callsignData(dxStation, verbose=False)
-    dxOP = dxCallData['fname'].split(' ')[0]
-    dxCity = dxCallData['addr2']
-    if 'state' in dxCallData:
-        dxLoc = dxCallData['state']
-    else:
-        dxLoc = dxCallData['country']
+#     qrz = QRZ(QRZ_USERNAME, QRZ_PASSWORD)
+#     dxCallData = qrz.callsignData(dxStation, verbose=False)
+#     dxOP = dxCallData['fname'].split(' ')[0]
+#     dxCity = dxCallData['addr2']
+#     if 'state' in dxCallData:
+#         dxLoc = dxCallData['state']
+#     else:
+#         dxLoc = dxCallData['country']
 
-    deCallData = qrz.callsignData(deStation, verbose=False)
-    deOP = deCallData['fname'].split(' ')[0]
-    deCity = deCallData['addr2']
-    if 'state' in deCallData:
-        deLoc = deCallData['state']
-    else:
-        deLoc = deCallData['country']
+#     deCallData = qrz.callsignData(deStation, verbose=False)
+#     deOP = deCallData['fname'].split(' ')[0]
+#     deCity = deCallData['addr2']
+#     if 'state' in deCallData:
+#         deLoc = deCallData['state']
+#     else:
+#         deLoc = deCallData['country']
 
-    if deStation == MY_CALLSIGN:
-        deSKCCNum = MY_SKCC_NUM
-        dxSKCCNum = generateSkccNum()
-    else:
-        deSKCCNum = generateSkccNum()
-        dxSKCCNum = MY_SKCC_NUM
+#     if deStation == MY_CALLSIGN:
+#         deSKCCNum = MY_SKCC_NUM
+#         dxSKCCNum = generateSkccNum()
+#     else:
+#         deSKCCNum = generateSkccNum()
+#         dxSKCCNum = MY_SKCC_NUM
 
-    now = datetime.datetime.now()
-    if 3 <= now.hour < 12:
-        salutation = "GM"
-    elif 12 <= now.hour < 20:
-        salutation = "GE"
-    else:
-        salutation = "GN"
+#     now = datetime.datetime.now()
+#     if 3 <= now.hour < 12:
+#         salutation = "GM"
+#     elif 12 <= now.hour < 20:
+#         salutation = "GE"
+#     else:
+#         salutation = "GN"
 
-    deRead = random.randint(1, 5)
-    deStrgth = random.randint(1, 9)
-    deTone = random.randint(1, 9)
-    dxRead = random.randint(1, 5)
-    dxStrgth = random.randint(1, 9)
-    dxTone = random.randint(1, 9)
+#     deRead = random.randint(1, 5)
+#     deStrgth = random.randint(1, 9)
+#     deTone = random.randint(1, 9)
+#     dxRead = random.randint(1, 5)
+#     dxStrgth = random.randint(1, 9)
+#     dxTone = random.randint(1, 9)
 
-    qsoLst = ['vvvv']
-    qsoLine = []
+#     qsoLst = ['vvvv']
+#     qsoLine = []
 
-    print(f"DEBUG qsoline: {progArgs['qsoLine']}")
-    if progArgs['qsoLine'] == None:
-        qsoLine = [1, 2, 3, 4, 5, 6]
-    else:
-        for item in progArgs['qsoLine'].split(','):
-            qsoLine.append(int(item))
+#     print(f"DEBUG qsoline: {progArgs['qsoLine']}")
+#     if progArgs['qsoLine'] == None:
+#         qsoLine = [1, 2, 3, 4, 5, 6]
+#     else:
+#         for item in progArgs['qsoLine'].split(','):
+#             qsoLine.append(int(item))
     
-    if qsoLine == []:
-        qsoLine = [1, 2, 3, 4, 5, 6]
+#     if qsoLine == []:
+#         qsoLine = [1, 2, 3, 4, 5, 6]
 
-    # use a random number to decide on number of CQs
-    if 1 in qsoLine:
-        if dxRead < 2:
-            qsoLst.append(f"CQ CQ CQ DE {deStation} {deStation} {deStation} K")
+#     # use a random number to decide on number of CQs
+#     if 1 in qsoLine:
+#         if dxRead < 2:
+#             qsoLst.append(f"CQ CQ CQ DE {deStation} {deStation} {deStation} K")
 
-        else:
-            qsoLst.append(f"CQ CQ DE {deStation} {deStation} K")
+#         else:
+#             qsoLst.append(f"CQ CQ DE {deStation} {deStation} K")
 
-    #    if qsoLine == MAX_QSO_LINES or qsoLine == 2:
-    if 2 in qsoLine:
-        if dxRead < 2:
-            qsoLst.append(f"{deStation} {deStation} DE "
-                          f"{dxStation} {dxStation} <AR>")
-        else:
-            qsoLst.append(f"{deStation} DE "
-                          f"{dxStation} {dxStation} <AR>")
+#     #    if qsoLine == MAX_QSO_LINES or qsoLine == 2:
+#     if 2 in qsoLine:
+#         if dxRead < 2:
+#             qsoLst.append(f"{deStation} {deStation} DE "
+#                           f"{dxStation} {dxStation} <AR>")
+#         else:
+#             qsoLst.append(f"{deStation} DE "
+#                           f"{dxStation} {dxStation} <AR>")
             
-    if 3 in qsoLine:
-        call      = f"{dxStation} DE {deStation}"
-        greeting  = f"TNX FER CALL <BT>"
-        signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
-        qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
-        nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
-        qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
+#     if 3 in qsoLine:
+#         call      = f"{dxStation} DE {deStation}"
+#         greeting  = f"TNX FER CALL <BT>"
+#         signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+#         qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
+#         nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
+#         qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
 
-    if 4 in qsoLine:
-        call      = f"{deStation} DE {dxStation}"
-        greeting  = f"R R {salutation} ES TNX FER CALL <BT>"
-        signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
-        qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
-        nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
-        qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
+#     if 4 in qsoLine:
+#         call      = f"{deStation} DE {dxStation}"
+#         greeting  = f"R R {salutation} ES TNX FER CALL <BT>"
+#         signalRpt = f"UR RST {dxRead}{dxStrgth}{dxTone} {dxRead}{dxStrgth}{dxTone} <BT>"
+#         qthRpt    = f"HR QTH {deCity} {deLoc} {deCity} {deLoc} <BT>"
+#         nameRpt   = f"NAME {deOP} {deOP} SKCC {deSKCCNum} {deSKCCNum} HW? <BK>"
+#         qsoLst.append(f"{greeting} {signalRpt} {qthRpt} {nameRpt}")
 
-    if 5 in qsoLine:
-        call      = f"{dxStation} DE {deStation}"
-        greeting  = f"TNX FER FB QSO {dxOP} <BT> HP CU AGN 73 <SK>"
-        qsoLst.append(f"{greeting} {call} i")
+#     if 5 in qsoLine:
+#         call      = f"{dxStation} DE {deStation}"
+#         greeting  = f"TNX FER FB QSO {dxOP} <BT> HP CU AGN 73 <SK>"
+#         qsoLst.append(f"{greeting} {call} i")
 
-    if 6 in qsoLine:
-        call      = f"{deStation} DE {dxStation}"
-        greeting  = f"TNX FER QSO {deOP} <BT> 73 <SK>"
-        qsoLst.append(f"{greeting} DE {call} i")
+#     if 6 in qsoLine:
+#         call      = f"{deStation} DE {dxStation}"
+#         greeting  = f"TNX FER QSO {deOP} <BT> 73 <SK>"
+#         qsoLst.append(f"{greeting} DE {call} i")
 
-    # print(f"DEBUG  qsoLst: {qsoLst}")
+#     # print(f"DEBUG  qsoLst: {qsoLst}")
 
-    generateCWSoundFile(progArgs, qsoLst)
+#     generateCWSoundFile(progArgs, qsoLst)
     
-    if progArgs['play']:
-        time.sleep(2)
-        playCWSoundFile(progArgs, qsoLst)
-    else:
-        pass
+#     if progArgs['play']:
+#         time.sleep(2)
+#         playCWSoundFile(progArgs, qsoLst)
+#     else:
+#         pass
 
-    displayGeneratedText(progArgs, qsoLst)
+#     displayGeneratedText(progArgs, qsoLst)
 
-    # print()
-    # for line in qsoLst:
-    #     print(line)
+#     # print()
+#     # for line in qsoLst:
+#     #     print(line)
         
     
 
 def main():
     args = parseArguments()
+    progArgs = processArguments(args)
+    # print(f"DEBUG: {progArgs}")
 
-    progArgs = {}
-    progArgs['callsigns'] = args.callsigns
-    progArgs['repeat'] = args.repeat
-    progArgs['numKochChars'] = args.numKochChars
-    progArgs['numCWOpsChars'] = args.numCWOpsChars
-    progArgs['farns'] = args.farns
-    progArgs['wpm'] = args.wpm
-    progArgs['extraWordSpace'] = args.extraWordSpace
-    progArgs['freq'] = args.freq
-    progArgs['totalWords'] = args.totalWords
-    progArgs['qsoLine'] = args.qsoLine
-    progArgs['rmAbbr'] = args.rmAbbr
-    progArgs['soundFilename'] = args.soundFilename
-    progArgs['play'] = args.play
-    progArgs['maxWordLen'] = args.maxWordLen
-    progArgs['minWordLen'] = args.minWordLen
-    progArgs['words'] = args.words
-    progArgs['qsos'] = args.qsos
-    progArgs['ninjaMode'] = args.ninjaMode
-    progArgs['ninjaCwVolume'] = args.ninjaCwVolume
-    progArgs['ninjaCallPhonetic'] = args.ninjaCallPhonetic
-    if args.wordFile:
-        progArgs['wordFile'] = os.path.abspath(args.wordFile)
-    if args.usCallsignFile:
-        progArgs['usCallsignFile'] = os.path.abspath(args.usCallsignFile)
-    if args.foreignCallsignFile:
-        progArgs['foreignCallsignFile'] = os.path.abspath(args.foreignCallsignFile)
-    # if args.commonFile:
-    #     progArgs['commonFile'] = os.path.abspath(args.commonFile)
-        
-    # print(f"args: {progArgs}")
+    if progArgs['init'] is not None:
+        initCwwords(progArgs)
+        sys.exit(0)
 
     if progArgs['numKochChars'] is not None:
         charList = getKochChars(progArgs['numKochChars'])

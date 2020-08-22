@@ -18,7 +18,7 @@ QRZ_PASSWORD   = 'Sean!12233'
 # FOREIGN_CALL_FILE = os.path.join(os.environ['HOME'],
 #                                  'local/deploy/cwwords/database/foreign.dat')
 FOREIGN_CALL_FILE = os.path.join(os.environ['HOME'],
-                                 'devel/python/cwwords/database/foreign.dat')
+                                 'devel/python/cwwords-data/foreign.dat')
 
 NUM_DOTS = 0
 
