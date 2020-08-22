@@ -31,16 +31,19 @@ CWOPS_CHARS = ['t', 'e', 'a', 'n', 'o', 'i', 's', '1', '4', 'r',
 
 VOWELS = ['a', 'e', 'i', 'o', 'u', 'y']
 
-PHONETIC_CHARS = [('A', 'alpha'), ('B', 'bravo'), ('C', 'charlie'), ('D', 'delta'),
-                  ('E', 'echo'), ('F', 'foxtrot'), ('G', 'golf'), ('H', 'hello'),
-                  ('I', 'india'), ('J', 'juliet'), ('K', 'kilo'), ('L', 'lima'),
-                  ('M', 'mike'), ('N', 'november'), ('O', 'oscar'), ('P', 'papa'),
-                  ('Q', 'quebec'), ('R', 'romeo'), ('S', 'sierra'), ('T', 'tango'),
-                  ('U', 'uniform'), ('V', 'victor'), ('W', 'whiskey'),
-                  ('X', 'xray'), ('Y', 'yankee'), ('Z', 'zulu')]
+PHONETIC_CHARS = [('A', 'alpha'), ('B', 'bravo'), ('C', 'charlie'),
+                  ('D', 'delta'), ('E', 'echo'), ('F', 'foxtrot'),
+                  ('G', 'golf'), ('H', 'hello'), ('I', 'india'),
+                  ('J', 'juliet'), ('K', 'kilo'), ('L', 'lima'),
+                  ('M', 'mike'), ('N', 'november'), ('O', 'oscar'),
+                  ('P', 'papa'), ('Q', 'quebec'), ('R', 'romeo'),
+                  ('S', 'sierra'), ('T', 'tango'), ('U', 'uniform'),
+                  ('V', 'victor'), ('W', 'whiskey'), ('X', 'xray'),
+                  ('Y', 'yankee'), ('Z', 'zulu')]
 
 # candidate for deletion
-# LOG_DATABASE_FILE = os.path.join(os.environ['HOME'], 'amateur-radio/log-database.db')
+# LOG_DATABASE_FILE = os.path.join(os.environ['HOME'],
+#                                  'amateur-radio/log-database.db')
 
 CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
