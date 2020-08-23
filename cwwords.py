@@ -33,7 +33,7 @@ VOWELS = ['a', 'e', 'i', 'o', 'u', 'y']
 
 PHONETIC_CHARS = [('A', 'alpha'), ('B', 'bravo'), ('C', 'charlie'),
                   ('D', 'delta'), ('E', 'echo'), ('F', 'foxtrot'),
-                  ('G', 'golf'), ('H', 'hello'), ('I', 'india'),
+                  ('G', 'golf'), ('H', 'hotel'), ('I', 'india'),
                   ('J', 'juliet'), ('K', 'kilo'), ('L', 'lima'),
                   ('M', 'mike'), ('N', 'november'), ('O', 'oscar'),
                   ('P', 'papa'), ('Q', 'quebec'), ('R', 'romeo'),
@@ -41,9 +41,6 @@ PHONETIC_CHARS = [('A', 'alpha'), ('B', 'bravo'), ('C', 'charlie'),
                   ('V', 'victor'), ('W', 'whiskey'), ('X', 'xray'),
                   ('Y', 'yankee'), ('Z', 'zulu')]
 
-# candidate for deletion
-# LOG_DATABASE_FILE = os.path.join(os.environ['HOME'],
-#                                  'amateur-radio/log-database.db')
 
 CW_INPUT_FILE =  "/tmp/ebook2cwinput.txt"
 
@@ -55,9 +52,12 @@ WORD_SND_FILE = os.path.join("/tmp", WORD_SND_BASE)
 
 TONE_FILE = os.path.join(sys.path[0], "tone.mp3")
 
-DATA_DIR          = os.path.abspath(os.path.join(sys.path[0], "../cwwords-data"))
+DATA_DIR          = os.path.abspath(os.path.join(sys.path[0],
+                                                 "../cwwords-data"))
 US_CALL_FILE      = os.path.join(DATA_DIR, 'EN.dat')
 FOREIGN_CALL_FILE = os.path.join(DATA_DIR, 'foreign.dat')
+WORD_FILE         = os.path.join(DATA_DIR, 'google-10000-english',
+                                 'google-10000-english-usa-no-swears.txt')
 
 CONFIG_FILE_LIST = ['default-calllist.cfg', 'default-callninja.cfg',
                     'default-callsigns.cfg', 'default-common.cfg',
@@ -65,13 +65,6 @@ CONFIG_FILE_LIST = ['default-calllist.cfg', 'default-callninja.cfg',
                     'default-qsos.cfg', 'default-wordlist.cfg',
                     'default-words.cfg']
 
-# MY_CALLSIGN = "K6ZX"
-# MY_SKCC_NUM = 18552
-
-# QRZ_USERNAME   = 'K6ZX'
-# QRZ_PASSWORD   = 'Sean!12233'
-
-# MAX_QSO_LINES  = 6
 
 # Class to allow newlines to be embedded in the parseArguments()
 # configargparse epilog help string
@@ -226,13 +219,9 @@ def processArguments(args):
     progArgs['ninjaCallPhonetic'] = args.ninjaCallPhonetic
     if args.wordFile:
         progArgs['wordFile'] = os.path.abspath(args.wordFile)
-    # if args.usCallsignFile:
-    #     progArgs['usCallsignFile'] = os.path.abspath(args.usCallsignFile)
-    # if args.foreignCallsignFile:
-    #     progArgs['foreignCallsignFile'] = os.path.abspath(args.foreignCallsignFile)
-    # if args.commonFile:
-    #     progArgs['commonFile'] = os.path.abspath(args.commonFile)
-        
+    else:
+        progArgs['wordFile'] = WORD_FILE
+
     # print(f"args: {progArgs}")
 
     return progArgs
@@ -290,23 +279,9 @@ def displayParameters(args, charList):
     print(text)
 
 
-# candidate for deletion -- 
-# def getLOTWLogCallsigns():
-#     calllst = []
-#     logDbase = LogDatabase(LOG_DATABASE_FILE)          # init LogDatabase object
-#     dbCallLst = logDbase.doDBQuery("select call from callsigndata")
-
-#     for call in dbCallLst:
-#         # print(f"call: {call[0]}")
-#         calllst.append(call[0])
-
-#     return calllst
-
-
 def getUSCallsigns(args):
     callLst = []
 
-    # with open(args['usCallsignFile'], 'r') as fileobj:
     with open(US_CALL_FILE, 'r') as fileobj:
         for line in fileobj:
             elem = {}
@@ -335,7 +310,6 @@ def getUSCallsigns(args):
 def getForeignCallsigns(args):
     callLst = []
 
-    # with open(args['foreignCallsignFile'], 'r') as fileobj:
     with open(FOREIGN_CALL_FILE, 'r') as fileobj:
         for line in fileobj:
             # print(f"line : {line}")
@@ -416,7 +390,6 @@ def getWordList(progArgs, charList):
     
     done = False
     with open(progArgs['wordFile'], 'r') as fileobj:
-
         for line in fileobj:
             line = line.strip()
             # print(f"line: {line}")
@@ -645,7 +618,6 @@ def displayGeneratedText(progArgs, wordLst):
         
     print("---------------------------------------------------------")
     numChars = 0
-    # for word in removeDuplicates(wordLst):
     rwordLst = removeDuplicates(wordLst)
     for index, word in enumerate(rwordLst):
         # print(f"word list: {index}  {word}")
@@ -688,8 +660,6 @@ def displayGeneratedText(progArgs, wordLst):
 def generateCallsigns(progArgs, charList):
     print('Generating callsigns...')
     usLst, foreignLst = getCallsignList(progArgs, charList)
-    # print(f"num FCC calls: {len(usLst)}, "
-    #       f"num foreign calls: {len(foreignLst)}")
 
     rnum = random.randint(60, 101) / 100
     fccnum = int(round(progArgs['totalWords'] * rnum))
