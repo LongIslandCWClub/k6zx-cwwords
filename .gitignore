@@ -3,6 +3,7 @@
 #
 
 *~
+*.html
 __pycache__
 venv
 database/
