@@ -11,6 +11,7 @@ CW training.
 * [Callsign Generation](#callsign_generation)
 * [Ninja Mode](#ninja_mode)
 * [Installation](#installation)
+* [Invocation](#invocation)
 
 <a name="general_info"></a>
 ## General Info
@@ -97,3 +98,22 @@ script, **cwwords**, included in the package that can be installed in
 the user's PATH to make executing **cwwords.py** easier, it will need
 to be modified somewhat to account for the location in the user's
 account that cwwords has been installed.
+
+**cwwords** can perform initialization of its data files and
+configuration files. This is done with the following invocation: 
+
+  $ cwwords.py --init <config_dir>
+  
+  where <config_dir> is a directory in which the program's
+  configuration files are stored. 
+  
+There are several default configuration files that are written to this
+directory that contain the configuration parameters for each of the
+modes of operation of **cwwords**. 
+
+
+<a name="invocation"></a>
+## Invocation
+
+The **cwwords** package 
+

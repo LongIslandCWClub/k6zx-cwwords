@@ -6,6 +6,7 @@ import configargparse
 import datetime
 import gtts
 import inspect
+import lzma
 import os
 import pydub
 from pydub.playback import play
@@ -53,11 +54,11 @@ WORD_SND_FILE = os.path.join("/tmp", WORD_SND_BASE)
 TONE_FILE = os.path.join(sys.path[0], "tone.mp3")
 
 DATA_DIR          = os.path.abspath(os.path.join(sys.path[0],
-                                                 "../cwwords-data"))
-US_CALL_FILE      = os.path.join(DATA_DIR, 'EN.dat')
+                                                 "./data"))
+US_CALL_FILE      = os.path.join(DATA_DIR, 'EN.dat.lzma')
 FOREIGN_CALL_FILE = os.path.join(DATA_DIR, 'foreign.dat')
-WORD_FILE         = os.path.join(DATA_DIR, 'google-10000-english',
-                                 'google-10000-english-usa-no-swears.txt')
+WORD_FILE         = os.path.join(DATA_DIR, 'google-10000-english-master',
+                                 'google-10000-english-no-swears.txt')
 
 CONFIG_FILE_LIST = ['default-calllist.cfg', 'default-callninja.cfg',
                     'default-callsigns.cfg', 'default-common.cfg',
@@ -120,8 +121,8 @@ filtering, and code speed can all be specified.
     parser = configargparse.ArgumentParser(description='CW Words audio file generator.',
                                            epilog=p, formatter_class=CustomFormatter)
 
-    parser.add_argument('--init', action='store', dest='init',
-                        help='Initialize cwwords.py configuration files') 
+    parser.add_argument('--init', action='store', dest='configdir',
+                        help='Initialize cwwords.py configuration files into directory') 
     parser.add_argument('--words', action='store_true', dest='words',
                         help='Generate words')
     parser.add_argument('--callsigns', action='store_true', dest='callsigns',
@@ -168,10 +169,6 @@ filtering, and code speed can all be specified.
                         type=int, default=600, help='Sidetone frequency (Hz)')
     parser.add_argument('--word-file', action='store', dest='wordFile', 
                         help='Word file path')
-    # parser.add_argument('--us-call-file', action='store', dest='usCallsignFile',
-    #                     help='US callsign file path')
-    # parser.add_argument('--foreign-call-file', action='store', dest='foreignCallsignFile',
-    #                     help='Foreign callsign file path')
     parser.add_argument('--ninja-mode', action='store_true', dest='ninjaMode',
                         help='Words generated in the Morse Ninja style')
     parser.add_argument('--ninja-cw-volume', action='store', dest='ninjaCwVolume',
@@ -195,7 +192,7 @@ filtering, and code speed can all be specified.
 
 def processArguments(args):
     progArgs = {}
-    progArgs['init'] = args.init
+    progArgs['init'] = args.configdir
     progArgs['callsigns'] = args.callsigns
     progArgs['repeat'] = args.repeat
     progArgs['numKochChars'] = args.numKochChars
@@ -227,13 +224,42 @@ def processArguments(args):
     return progArgs
 
 
+def checkHelperApplications():
+    # Ensure that the required applications that are used by
+    # cwwords.py are installed on the system.
+    error = False
+    if not shutil.which("/usr/bin/ebook2cw"):
+        print("ERROR: the program 'ebook2cw' is not available on "
+              "this system, exiting...")
+        error = True
+
+    if not shutil.which("morse"):
+        print("ERROR: the program 'morse' is not available on "
+              "this system, exiting...")
+        error = True
+
+    if not shutil.which("morse"):
+        print("ERROR: the program 'morse' is not available on "
+              "this system, exiting...")
+        error = True
+
+    if not shutil.which("mpg123"):
+        print("ERROR: the program 'mpg123' is not available on "
+              "this system, exiting...")
+        error = True
+
+    if error:
+        sys.exit(1)
+
+
 def initCwwords(args):
     # Initialize cwwwords.py by creating default configuration files
     # for each of the functional modes of the program
     absPath = os.path.abspath(args['init'])
 
     if not os.path.exists(absPath):
-        ans = input(f"The directory '{absPath}' does not exist, Create it (y or n) ")
+        ans = input(f"The directory '{absPath}' does not exist, "
+                    "Create it (y or n)? ")
         if ans == 'y' or ans == 'Y':
             os.mkdir(absPath)
         else:
@@ -242,14 +268,13 @@ def initCwwords(args):
     else:
         print(f"The directory '{absPath}' exists.")
 
-    print('Creating init files...')
+    print('Creating configuration files...')
     for file in CONFIG_FILE_LIST:
         dstFile = file.split('-')[1]
         dstPath = os.path.join(absPath, dstFile)
         shutil.copy(file, dstPath)
         print(f"  creating: {dstPath}")
 
-    
 
 def getKochChars(numChars):
     return KOCH_CHARS[:numChars]
@@ -279,10 +304,15 @@ def displayParameters(args, charList):
     print(text)
 
 
+# The US callsign file is very large and is, therefore, compressed
+# using 'lzma' compression in the ./data directory. So here the file
+# is opened using the lzma module which decompresses the file so that
+# it can be processed normally.
 def getUSCallsigns(args):
     callLst = []
 
-    with open(US_CALL_FILE, 'r') as fileobj:
+    try:
+        fileobj = lzma.open(US_CALL_FILE, 'rt')
         for line in fileobj:
             elem = {}
             call = line.split('|')
@@ -303,7 +333,10 @@ def getUSCallsigns(args):
             elem['state'] = state
 
             callLst.append(elem)
-    
+    except FileNotFoundError as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)
+        
     return callLst
 
 
@@ -888,6 +921,8 @@ def main():
     progArgs = processArguments(args)
     # print(f"DEBUG: {progArgs}")
 
+    checkHelperApplications()
+    
     if progArgs['init'] is not None:
         initCwwords(progArgs)
         sys.exit(0)
