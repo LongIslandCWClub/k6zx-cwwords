@@ -201,7 +201,7 @@ Callsign generation mode performs a similar function to word generation,
 except that callsigns (both U.S. and International) are generated.
 
 'Ninja' mode is a mode that follows the unique teaching method pioneered 
-(as far as I know) by Kurt Zoglmann, AD0WE and made popular on his website,
+by Kurt Zoglmann, AD0WE and made popular on his website,
 <https://morsecode.ninja>. In this mode, an alert tone is played to signify
 the start of a word sequence. The word sequence consists of the Morse Code 
 for a word, followed by the spoken word, followed by the Morse Code for the
