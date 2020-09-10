@@ -4,6 +4,7 @@
 
 *~
 *.html
+*.spec
 __pycache__
 venv
 database/

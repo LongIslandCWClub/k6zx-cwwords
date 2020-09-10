@@ -8,6 +8,7 @@ import gtts
 import inspect
 import lzma
 import os
+import platform
 import pydub
 from pydub.playback import play
 import random
@@ -17,6 +18,7 @@ import string
 import subprocess
 import sys
 import time
+
 
 
 
@@ -51,13 +53,15 @@ CW_OUTPUT_FILE = os.path.join("/tmp", CW_OUTPUT_BASE)
 WORD_SND_BASE = "cwword-word-snd"
 WORD_SND_FILE = os.path.join("/tmp", WORD_SND_BASE)
 
-TONE_FILE = os.path.join(sys.path[0], "tone.mp3")
+# TONE_FILE = os.path.join(sys.path[0], "tone.mp3")
+TONE_FILE     = os.path.join('data', 'tone.mp3')
 
-DATA_DIR          = os.path.abspath(os.path.join(sys.path[0],
-                                                 "./data"))
-US_CALL_FILE      = os.path.join(DATA_DIR, 'EN.dat.lzma')
-FOREIGN_CALL_FILE = os.path.join(DATA_DIR, 'foreign.dat')
-WORD_FILE         = os.path.join(DATA_DIR, 'google-10000-english-master',
+# DATA_DIR          = os.path.abspath(os.path.join(sys.path[0],
+#                                                  "./data"))
+SCRIPT_DIR        = os.path.dirname(os.path.realpath(sys.argv[0]))
+US_CALL_FILE      = os.path.join('data', 'EN.dat.lzma')
+FOREIGN_CALL_FILE = os.path.join('data', 'foreign.dat')
+WORD_FILE         = os.path.join('data', 'google-10000-english-master',
                                  'google-10000-english-no-swears.txt')
 
 CONFIG_FILE_LIST = ['default-calllist.cfg', 'default-callninja.cfg',
@@ -215,10 +219,9 @@ def processArguments(args):
     progArgs['ninjaCwVolume'] = args.ninjaCwVolume
     progArgs['ninjaCallPhonetic'] = args.ninjaCallPhonetic
     if args.wordFile:
-        progArgs['wordFile'] = os.path.abspath(args.wordFile)
-    else:
-        progArgs['wordFile'] = WORD_FILE
+        progArgs['wordFile'] = args.wordFile
 
+    
     # print(f"args: {progArgs}")
 
     return progArgs
@@ -272,7 +275,18 @@ def initCwwords(args):
     for file in CONFIG_FILE_LIST:
         dstFile = file.split('-')[1]
         dstPath = os.path.join(absPath, dstFile)
-        shutil.copy(file, dstPath)
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            srcPath = os.path.join(sys._MEIPASS, 'data', file)
+        else:
+            srcPath = file
+        shutil.copy(srcPath, dstPath)
+
+        # change the config file permissions when running from
+        # pyinstaller bundle and on Linux (for some reason copying
+        # from the bundle the permissions are 700)
+        if (platform.system() == 'Linux' and getattr(sys, 'frozen', False) and
+            hasattr(sys, '_MEIPASS')):
+            os.chmod(dstPath, 0o644)
         print(f"  creating: {dstPath}")
 
 
@@ -311,8 +325,13 @@ def displayParameters(args, charList):
 def getUSCallsigns(args):
     callLst = []
 
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        callFile = os.path.join(sys._MEIPASS, US_CALL_FILE)
+    else:
+        callFile = os.path.join(SCRIPT_DIR, US_CALL_FILE)
+
     try:
-        fileobj = lzma.open(US_CALL_FILE, 'rt')
+        fileobj = lzma.open(callFile, 'rt')
         for line in fileobj:
             elem = {}
             call = line.split('|')
@@ -343,7 +362,12 @@ def getUSCallsigns(args):
 def getForeignCallsigns(args):
     callLst = []
 
-    with open(FOREIGN_CALL_FILE, 'r') as fileobj:
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        callFile = os.path.join(sys._MEIPASS, FOREIGN_CALL_FILE)
+    else:
+        callFile = os.path.join(SCRIPT_DIR, FOREIGN_CALL_FILE)
+
+    with open(callFile, 'r') as fileobj:
         for line in fileobj:
             # print(f"line : {line}")
             elem = {}
@@ -398,9 +422,6 @@ def getCallsignList(progArgs, charList):
     for x in usDataLst:
         usLst.append(x['callsign'])
 
-    # print(f"DEBUG: {usLst}")
-    # print(f"Number of US callsigns: {len(usLst)}")
-
     usLst = filterCallsigns(charList, usLst)
     
     foreignDataLst = getForeignCallsigns(progArgs)
@@ -408,9 +429,6 @@ def getCallsignList(progArgs, charList):
     for x in foreignDataLst:
         foreignLst.append(x['callsign'])
         
-    # print(f"DEBUG: {foreignDataLst}")
-    # print(f"Number of foreign callsigns: {len(foreignLst)}")
-
     foreignLst = filterCallsigns(charList, foreignLst)
     
     return usLst, foreignLst
@@ -419,13 +437,33 @@ def getCallsignList(progArgs, charList):
 def getWordList(progArgs, charList):
     wordLst = []
 
-    # print(f"word file: {progArgs['wordFile']}")
-    
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running from the pyinstaller bundle, so have to juggle the
+        # file name of the common words file. If the 'wordFile' set in
+        # the config file is an absolute path, then we assume that the
+        # user has entered a file not in the bundle, so use this file.
+        if 'wordFile' in progArgs:
+            if os.path.isabs(progArgs['wordFile']):
+                wordFile = progArgs['wordFile']
+            else:
+                print("WARNING: word file provided is not an absolute filename.\n"
+                      "Any '--word-file' added to the configuration file while\n"
+                      "running in bundled mode (i.e. single executable application)\n"
+                      "must be an absolute filename.\n"
+                      f"Using the built-in word file: {WORD_FILE}")
+                wordFile = os.path.join(sys._MEIPASS, WORD_FILE)
+        else:
+            wordFile = os.path.join(sys._MEIPASS, WORD_FILE)
+    else:
+        if 'wordFile' in progArgs:
+            wordFile = progArgs['wordFile']
+        else:
+            wordFile = os.path.join(SCRIPT_DIR, WORD_FILE)
+
     done = False
-    with open(progArgs['wordFile'], 'r') as fileobj:
+    with open(wordFile, 'r') as fileobj:
         for line in fileobj:
             line = line.strip()
-            # print(f"line: {line}")
 
             # this allows there to be an explanation of some Q codes or
             # abbreviations in the file, delimited by '-'
@@ -434,33 +472,23 @@ def getWordList(progArgs, charList):
 
             word = lst[0].strip()
             word = word.lower()
-            # print(f"word: {word}")
 
             for c in word:
                 # if (c not in charList) and (c.lower() not in charList):
                 if c not in charList:
-                    # print(f"c: {c}, word: {word}")
                     break
                 else:
                     pass
             else:
-                # print(f"append: {word}")
                 wordLst.append(word)
 
-    # debug
-    # print(wordLst)
-    # sys.exit(0)
-    
     return wordLst
 
 
 def applyMinMax(progArgs, lst):
     wordLst = []
-    # print(f"min: {progArgs['minWordLen']}")
-    # print(f"max: {progArgs['maxWordLen']}")
 
     for word in lst:
-        # print(f"word: {word} -- len: {len(word)}")
         if len(word) < progArgs['minWordLen']:
             pass
         elif len(word) > progArgs['maxWordLen']:
@@ -494,11 +522,9 @@ def generateCWSoundFile(progArgs, wordLst):
             fileobj.write(f"{word}\n")
 
     for file in os.listdir('/tmp'):
-        # print(f"file: {file}")
         if file.find(CW_OUTPUT_BASE) > -1 :
             absFile = os.path.join("/tmp", file)
             os.remove(absFile)
-            # print(f"remove stale mp3 file: {absFile}")
 
     if progArgs['noise']:
         noiseInt = int(progArgs['noise'])
@@ -513,10 +539,8 @@ def generateCWSoundFile(progArgs, wordLst):
            f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} "
            f"{noiseClause} -o {progArgs['soundFilename']} "
            f"{CW_INPUT_FILE}")
-    # print(f"DEBUG: cmd = {cmd}")
     
 
-    # proc = subprocess.run(cmd, shell=True, capture_output=True)
     proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
     if proc.returncode:
@@ -550,8 +574,13 @@ def executeNinjaMode(progArgs, wordLst):
     numChars = 0
     print('')
 
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        toneFile = os.path.join(sys._MEIPASS, TONE_FILE)
+    else:
+        toneFile = os.path.join(SCRIPT_DIR, TONE_FILE)
+
     # alert tone to delineate word sequence
-    tone = pydub.AudioSegment.from_mp3(TONE_FILE)
+    tone = pydub.AudioSegment.from_mp3(toneFile)
     # reduce volume of alert tone
     tone = tone - 12                  
     play(tone)
@@ -625,18 +654,15 @@ def removeDuplicates(lst):
 
 def playCWSoundFile(progArgs, wordLst):
     for file in os.listdir('/tmp'):
-        # print(f"playCWSoundFile(): file -- {file}")
         if file.find(CW_OUTPUT_BASE) > -1:
             absFile = os.path.join("/tmp", file)
             cmd = f"/usr/bin/mpg123 {absFile}"
-            # print(f"playCWSoundFile(): sndfile -- {absFile}")
 
             proc = subprocess.run(cmd, shell=True, encoding='utf-8',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
             if proc.returncode:
                 print(f"ERROR: mpg123 return: {proc.returncode}")
-
 
 
 def displayGeneratedText(progArgs, wordLst):
@@ -697,7 +723,7 @@ def generateCallsigns(progArgs, charList):
     rnum = random.randint(60, 101) / 100
     fccnum = int(round(progArgs['totalWords'] * rnum))
     fornum = progArgs['totalWords'] - fccnum
-    print(f"US calls: {fccnum}, foreign calls: {fornum}")
+    print(f"U.S. calls: {fccnum}, Intl calls: {fornum}")
 
     if usLst:
         random.shuffle(usLst)
@@ -744,26 +770,18 @@ def generateCallsigns(progArgs, charList):
         print("increase number of characters in set.")
 
 
-
 def generateWords(progArgs, charList):
-    # print('Generating words...')
     wordLst = getWordList(progArgs, charList)
-    # print(f"word list: {wordLst}")
     wordLst = applyMinMax(progArgs, wordLst)
-    # print(f"word list: {wordLst}")
-    # wordLst = removeAbbreviations(progArgs, wordLst)
 
     if wordLst:
         random.shuffle(wordLst)
         trunWordLst = wordLst[:progArgs['totalWords']]
-        # print(f"num words: {len(trunWordLst)}")
-        # print(f"\n\nwords: {trunWordLst}")
 
         if progArgs['ninjaMode']:
             executeNinjaMode(progArgs, trunWordLst)
 
         elif progArgs['play']:
-            # print('DEBUG: playing CW...')
             # Add 'vvvv' to beginning of list
             trunWordLst.insert(0, 'vvvv')
             generateCWSoundFile(progArgs, trunWordLst)
@@ -929,12 +947,8 @@ def main():
 
     if progArgs['numKochChars'] is not None:
         charList = getKochChars(progArgs['numKochChars'])
-        # print(f"Koch characters: {charList}")
-        # print(f"Number of Koch characters: {progArgs['numKochChars']}\n")
     elif progArgs['numCWOpsChars'] is not None:
         charList = getCWOpsChars(progArgs['numCWOpsChars'])
-        # print(f"CW Ops characters: {charList}")
-        # print(f"Number of CW Ops characters: {progArgs['numCWOpsChars']}\n")
 
     displayParameters(progArgs, charList)
     
