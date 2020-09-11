@@ -241,11 +241,6 @@ def checkHelperApplications():
               "this system, exiting...")
         error = True
 
-    if not shutil.which("morse"):
-        print("ERROR: the program 'morse' is not available on "
-              "this system, exiting...")
-        error = True
-
     if not shutil.which("mpg123"):
         print("ERROR: the program 'mpg123' is not available on "
               "this system, exiting...")
@@ -534,12 +529,29 @@ def generateCWSoundFile(progArgs, wordLst):
             noiseClause = f"-N {progArgs['noise']}"
     else:
         noiseClause = ""
-        
-    cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
-           f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} "
-           f"{noiseClause} -o {progArgs['soundFilename']} "
-           f"{CW_INPUT_FILE}")
-    
+
+    # Choose the application used to generate/play the morse code
+    # sound file based on the OS we're running on. The issue is that
+    # the ebook2cw program isn't packaged for MacOS and the
+    # compilation instructions are both difficult and not working on
+    # MacOS 10.15 (catalina). So we substitude the 'morse' program,
+    # which is available on MacOS (through 'homebrew'), which both
+    # generates and plays the morse code. But morse isn't available
+    # for Windows, while ebook2cw is available so we use that on Linux
+    # and Windows. One of the benefits to ebook2cw is that it allows
+    # the user more control over additional spacing than 'morse' does. 
+    if platform.system() == 'Linux' or platform.system() == 'Windows':
+        # use ebook2cw as there 
+        cmd = (f"/usr/bin/ebook2cw -w {progArgs['wpm']} -e {progArgs['farns']} "
+               f"-W {progArgs['extraWordSpace']} -f {progArgs['freq']} "
+               f"{noiseClause} -o {progArgs['soundFilename']} "
+               f"{CW_INPUT_FILE}")
+    elif platform.system() == 'MacOS':
+        cmd = (f"/usr/bin/morse -f {progArgs['freq']} -w {progArgs['farns']} "
+               f"-F {progArgs['wpm']} < {CW_INPUT_FILE}")
+    else:
+        print(f"ERROR unknown OS: {platform.system()}, exiting...")
+        sys.exit(1)
 
     proc = subprocess.run(cmd, shell=True, encoding='utf-8', stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
@@ -653,16 +665,30 @@ def removeDuplicates(lst):
     
 
 def playCWSoundFile(progArgs, wordLst):
-    for file in os.listdir('/tmp'):
-        if file.find(CW_OUTPUT_BASE) > -1:
-            absFile = os.path.join("/tmp", file)
-            cmd = f"/usr/bin/mpg123 {absFile}"
 
-            proc = subprocess.run(cmd, shell=True, encoding='utf-8',
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
-            if proc.returncode:
-                print(f"ERROR: mpg123 return: {proc.returncode}")
+    # Use mpg123 to play sounds on Linux
+    if platform.system() == 'Linux':
+        for file in os.listdir('/tmp'):
+            if file.find(CW_OUTPUT_BASE) > -1:
+                absFile = os.path.join("/tmp", file)
+                cmd = f"/usr/bin/mpg123 {absFile}"
+
+                proc = subprocess.run(cmd, shell=True, encoding='utf-8',
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+                if proc.returncode:
+                    print(f"ERROR: mpg123 return: {proc.returncode}")
+                else:
+                    pass
+            else:
+                pass
+    elif platform.system() == 'MacOS':
+        # On MacOS using the 'morse' program, which plays its own
+        # sound
+        pass
+    elif platform.system() == 'Windows':
+        print("WARNING: running on Windows, playing sounds on this OS hasn't"
+              "been worked out yet")
 
 
 def displayGeneratedText(progArgs, wordLst):
